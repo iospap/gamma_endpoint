@@ -7,7 +7,7 @@ class Chain(str, Enum):
     ETHEREUM = "ethereum"
     OPTIMISM = "optimism"
     POLYGON = "polygon"
-    BINANCE = "binance"
+    BSC = "binance"
 
 
 class Dex(str, Enum):

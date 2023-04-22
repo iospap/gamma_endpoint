@@ -1,9 +1,12 @@
 from enum import Enum
 
+from common import enums as common_enums
 
-class Chain(str, Enum):
+
+class Chain(common_enums.Chain):
     ARBITRUM = "arbitrum"
     CELO = "celo"
+    ETHEREUM = "mainnet"
     MAINNET = "mainnet"
     OPTIMISM = "optimism"
     POLYGON = "polygon"
@@ -15,7 +18,7 @@ class PositionType(str, Enum):
     LIMIT = "limit"
 
 
-class Protocol(str, Enum):
+class Protocol(common_enums.Dex):
     QUICKSWAP = "quickswap"
     UNISWAP = "uniswap"
     ZYBERSWAP = "zyberswap"

@@ -12,13 +12,13 @@ from endpoint.config.cache import (
 
 class endpoint_builder_template:
     def __init__(
-        self, dex: str, chain: str, tags: list | None = None, url_root: str = ""
+        self, dex: str, chain: str, tags: list | None = None, prefix: str = ""
     ):
         self.dex = dex
         self.chain = chain
         self.tags = tags or [f"{chain} - {dex}"]
         # set root urs qithout the last /
-        self.url_root = url_root.removesuffix("/")
+        self.prefix = self.prefix.removesuffix("/")
 
     # ROUTEs BUILD FUNCTIONS
     def router(self) -> APIRouter:
@@ -31,7 +31,7 @@ class endpoint_builder_template:
 
         # ROOT
         router.add_api_route(
-            path=f"{self.url_root}/",
+            path=f"{self.prefix}/",
             endpoint=self.root,
             methods=["GET"],
         )
@@ -49,25 +49,25 @@ class endpoint_builder_template:
         """Create /hypervisor routes for the given chain and dex combination."""
 
         router.add_api_route(
-            path=f"{self.url_root}{'/hypervisor/{hypervisor_address}/basicStats'}",
+            path=f"{self.prefix}{'/hypervisor/{hypervisor_address}/basicStats'}",
             endpoint=self.hypervisor_basic_stats,
             methods=["GET"],
         )
 
         router.add_api_route(
-            path=f"{self.url_root}{'/hypervisor/{hypervisor_address}/returns'}",
+            path=f"{self.prefix}{'/hypervisor/{hypervisor_address}/returns'}",
             endpoint=self.hypervisor_returns,
             methods=["GET"],
         )
 
         router.add_api_route(
-            path=f"{self.url_root}{'/hypervisor/{hypervisor_address}/averageReturns'}",
+            path=f"{self.prefix}{'/hypervisor/{hypervisor_address}/averageReturns'}",
             endpoint=self.hypervisor_average_returns,
             methods=["GET"],
         )
 
         router.add_api_route(
-            path=f"{self.url_root}{'/hypervisor/{hypervisor_address}/uncollectedFees'}",
+            path=f"{self.prefix}{'/hypervisor/{hypervisor_address}/uncollectedFees'}",
             endpoint=self.hypervisor_uncollected_fees,
             methods=["GET"],
         )
@@ -78,25 +78,25 @@ class endpoint_builder_template:
         self, router: APIRouter, dex: str, chain: str
     ) -> APIRouter:
         router.add_api_route(
-            path=f"{self.url_root}{'/hypervisor/{hypervisor_address}/analytics/basic/daily'}",
+            path=f"{self.prefix}{'/hypervisor/{hypervisor_address}/analytics/basic/daily'}",
             endpoint=self.hypervisor_analytics_basic_daily,
             methods=["GET"],
         )
 
         router.add_api_route(
-            path=f"{self.url_root}{'/hypervisor/{hypervisor_address}/analytics/basic/weekly'}",
+            path=f"{self.prefix}{'/hypervisor/{hypervisor_address}/analytics/basic/weekly'}",
             endpoint=self.hypervisor_analytics_basic_weekly,
             methods=["GET"],
         )
 
         router.add_api_route(
-            path=f"{self.url_root}{'/hypervisor/{hypervisor_address}/analytics/basic/biweekly'}",
+            path=f"{self.prefix}{'/hypervisor/{hypervisor_address}/analytics/basic/biweekly'}",
             endpoint=self.hypervisor_analytics_basic_biweekly,
             methods=["GET"],
         )
 
         router.add_api_route(
-            path=f"{self.url_root}{'/hypervisor/{hypervisor_address}/analytics/basic/monthly'}",
+            path=f"{self.prefix}{'/hypervisor/{hypervisor_address}/analytics/basic/monthly'}",
             endpoint=self.hypervisor_analytics_basic_monthly,
             methods=["GET"],
         )
@@ -107,76 +107,76 @@ class endpoint_builder_template:
         self, router: APIRouter, dex: str, chain: str
     ) -> APIRouter:
         router.add_api_route(
-            path=f"{self.url_root}{'/hypervisors/aggregateStats'}",
+            path=f"{self.prefix}{'/hypervisors/aggregateStats'}",
             endpoint=self.hypervisors_aggregate_stats,
             methods=["GET"],
         )
 
         router.add_api_route(
-            path=f"{self.url_root}{'/hypervisors/recentFees'}",
+            path=f"{self.prefix}{'/hypervisors/recentFees'}",
             endpoint=self.hypervisors_recent_fees,
             methods=["GET"],
         )
 
         router.add_api_route(
-            path=f"{self.url_root}{'/hypervisors/returns'}",
+            path=f"{self.prefix}{'/hypervisors/returns'}",
             endpoint=self.hypervisors_returns,
             methods=["GET"],
         )
 
         router.add_api_route(
-            path=f"{self.url_root}{'/hypervisors/averageReturns'}",
+            path=f"{self.prefix}{'/hypervisors/averageReturns'}",
             endpoint=self.hypervisors_average_returns,
             methods=["GET"],
             description="Returns the average returns for all hypervisors.",
         )
 
         router.add_api_route(
-            path=f"{self.url_root}{'/hypervisors/allData'}",
+            path=f"{self.prefix}{'/hypervisors/allData'}",
             endpoint=self.hypervisors_all_data,
             methods=["GET"],
         )
 
         router.add_api_route(
-            path=f"{self.url_root}{'/hypervisors/uncollectedFees'}",
+            path=f"{self.prefix}{'/hypervisors/uncollectedFees'}",
             endpoint=self.hypervisors_uncollected_fees,
             methods=["GET"],
         )
 
         router.add_api_route(
-            path=f"{self.url_root}{'/hypervisors/collectedFees'}",
+            path=f"{self.prefix}{'/hypervisors/collectedFees'}",
             endpoint=self.hypervisors_collected_fees,
             methods=["GET"],
         )
 
         router.add_api_route(
-            path=f"{self.url_root}{'/hypervisors/feeReturns/daily'}",
+            path=f"{self.prefix}{'/hypervisors/feeReturns/daily'}",
             endpoint=self.hypervisors_feeReturns_daily,
             methods=["GET"],
         )
         router.add_api_route(
-            path=f"{self.url_root}{'/hypervisors/feeReturns/weekly'}",
+            path=f"{self.prefix}{'/hypervisors/feeReturns/weekly'}",
             endpoint=self.hypervisors_feeReturns_weekly,
             methods=["GET"],
         )
         router.add_api_route(
-            path=f"{self.url_root}{'/hypervisors/feeReturns/monthly'}",
+            path=f"{self.prefix}{'/hypervisors/feeReturns/monthly'}",
             endpoint=self.hypervisors_feeReturns_monthly,
             methods=["GET"],
         )
 
         router.add_api_route(
-            path=f"{self.url_root}{'/hypervisors/impermanentDivergence/daily'}",
+            path=f"{self.prefix}{'/hypervisors/impermanentDivergence/daily'}",
             endpoint=self.hypervisors_impermanentDivergence_daily,
             methods=["GET"],
         )
         router.add_api_route(
-            path=f"{self.url_root}{'/hypervisors/impermanentDivergence/weekly'}",
+            path=f"{self.prefix}{'/hypervisors/impermanentDivergence/weekly'}",
             endpoint=self.hypervisors_impermanentDivergence_weekly,
             methods=["GET"],
         )
         router.add_api_route(
-            path=f"{self.url_root}{'/hypervisors/impermanentDivergence/monthly'}",
+            path=f"{self.prefix}{'/hypervisors/impermanentDivergence/monthly'}",
             endpoint=self.hypervisors_impermanentDivergence_monthly,
             methods=["GET"],
         )
@@ -277,3 +277,14 @@ class endpoint_builder_template:
 
     async def hypervisors_impermanentDivergence_monthly(self, response: Response):
         return NotImplementedError(" function defaults not implemented yet")
+
+
+class endpoint_builder_simpleTemplate:
+    def __init__(self, tags: list, prefix: str = ""):
+        self.tags = tags
+        # set root urs qithout the last /
+        self.prefix = self.prefix.removesuffix("/")
+
+    # ROUTEs BUILD FUNCTIONS
+    def router(self) -> APIRouter:
+        return None
