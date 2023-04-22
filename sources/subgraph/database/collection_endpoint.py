@@ -12,7 +12,7 @@ from sources.subgraph.enums import Chain, Protocol
 
 from sources.subgraph.config import GQL_CLIENT_TIMEOUT
 
-from database.common.collections_common import db_collections_common
+from sources.subgraph.database.common.collections_common import db_collections_common
 
 logger = logging.getLogger(__name__)
 

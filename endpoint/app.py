@@ -19,5 +19,5 @@ app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
 )
 
-app.mount("/subgraph", build_app)
+app.mount("/subgraph", build_app())
 # app.mount("/api/v2", apiv2)
