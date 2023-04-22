@@ -283,7 +283,7 @@ class endpoint_builder_simpleTemplate:
     def __init__(self, tags: list, prefix: str = ""):
         self.tags = tags
         # set root urs qithout the last /
-        self.prefix = self.prefix.removesuffix("/")
+        self.prefix = prefix.removesuffix("/")
 
     # ROUTEs BUILD FUNCTIONS
     def router(self) -> APIRouter:
