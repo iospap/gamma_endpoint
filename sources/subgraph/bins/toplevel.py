@@ -4,7 +4,7 @@ from datetime import timedelta
 import numpy as np
 from pandas import DataFrame
 
-from sources.subgraph import GammaClient
+from sources.subgraph.bins import GammaClient
 from sources.subgraph.bins.config import EXCLUDED_HYPERVISORS, GROSS_FEES_MAX, TVL_MAX
 from sources.subgraph.bins.constants import DAYS_IN_PERIOD
 from sources.subgraph.bins.enums import Chain, Protocol

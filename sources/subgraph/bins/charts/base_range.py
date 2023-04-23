@@ -3,7 +3,7 @@ from datetime import timedelta
 import numpy as np
 import pandas as pd
 
-from sources.subgraph import GammaClient
+from sources.subgraph.bins import GammaClient
 from sources.subgraph.bins.enums import Chain, Protocol
 from sources.subgraph.bins.pools import Pool
 from sources.subgraph.bins.utils import tick_to_priceDecimal, timestamp_ago

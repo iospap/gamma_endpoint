@@ -1,7 +1,7 @@
 import asyncio
 from datetime import timedelta
 
-from sources.subgraph import GammaClient
+from sources.subgraph.bins import GammaClient
 from sources.subgraph.bins.config import GROSS_FEES_MAX, legacy_stats
 from sources.subgraph.bins.constants import (
     DAYS_IN_PERIOD,

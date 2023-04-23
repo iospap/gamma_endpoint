@@ -1,6 +1,6 @@
 import datetime
 
-from sources.subgraph import UniswapV3Client
+from sources.subgraph.bins import UniswapV3Client
 from sources.subgraph.bins.enums import Chain, Protocol
 from sources.subgraph.bins.utils import sqrtPriceX96_to_priceDecimal
 

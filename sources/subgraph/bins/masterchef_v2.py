@@ -1,6 +1,6 @@
 """Module for Masterchef V2 related data"""
 
-from sources.subgraph import GammaClient
+from sources.subgraph.bins import GammaClient
 from sources.subgraph.bins.constants import YEAR_SECONDS
 from sources.subgraph.bins.enums import Chain, Protocol
 from sources.subgraph.bins.pricing import token_prices

@@ -11,7 +11,7 @@ from aiocron import crontab
 from croniter import croniter
 from datetime import datetime, timezone
 
-from sources.subgraph import utils
+from sources.subgraph.bins import utils
 
 from sources.subgraph.bins.enums import Protocol
 from sources.subgraph.bins.config import (
