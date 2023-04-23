@@ -9,7 +9,7 @@ from endpoint.config.cache import CHARTS_CACHE_TIMEOUT
 from sources.subgraph.enpoint.routers import build_routes, build_routes_compatible
 from sources.subgraph.enpoint import routers
 
-from sources.subgraph.charts.daily import DailyChart
+from sources.subgraph.bins.charts.daily import DailyChart
 
 
 def create_app(

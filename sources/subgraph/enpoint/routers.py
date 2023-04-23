@@ -4,10 +4,10 @@ from endpoint.routers.template import (
     endpoint_builder_template,
     endpoint_builder_baseTemplate,
 )
-from sources.subgraph.common import hypervisor, analytics, aggregate_stats
-from sources.subgraph.simulator import SimulatorInfo
-from sources.subgraph.config import DEPLOYMENTS, RUN_FIRST_QUERY_TYPE
-from sources.subgraph.enums import Chain, Protocol, QueryType
+from sources.subgraph.bins.common import hypervisor, analytics, aggregate_stats
+from sources.subgraph.bins.simulator import SimulatorInfo
+from sources.subgraph.bins.config import DEPLOYMENTS, RUN_FIRST_QUERY_TYPE
+from sources.subgraph.bins.enums import Chain, Protocol, QueryType
 
 
 RUN_FIRST = RUN_FIRST_QUERY_TYPE

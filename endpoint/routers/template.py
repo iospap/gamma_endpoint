@@ -25,7 +25,7 @@ class endpoint_builder_template(endpoint_builder_baseTemplate):
     def __init__(
         self, dex: str, chain: str, tags: list | None = None, prefix: str = ""
     ):
-        super.__init__(tags=tags, prefix=prefix)
+        super().__init__(tags=tags, prefix=prefix)
 
         self.dex = dex
         self.chain = chain
@@ -56,12 +56,17 @@ class endpoint_builder_template(endpoint_builder_baseTemplate):
             generate_unique_id_function=self.generate_unique_id,
         )
 
-        # create hyperivisor routes
+        # create all other routes
         router = self._create_routes_hypervisor(router=router, dex=dex, chain=chain)
-
         router = self._create_routes_hypervisor_analytics(router, dex, chain)
 
         router = self._create_routes_hypervisors(router, dex, chain)
+        router = self._create_routes_hypervisors_rewards(router, dex, chain)
+
+        router = self._create_routes_users_rewards(router, dex, chain)
+        router = self._create_routes_users(router, dex, chain)
+
+        router = self._create_routes_vault(router, dex, chain)
 
         return router
 
@@ -226,6 +231,72 @@ class endpoint_builder_template(endpoint_builder_baseTemplate):
 
         return router
 
+    def _create_routes_hypervisors_rewards(
+        self, router: APIRouter, dex: str, chain: str
+    ) -> APIRouter:
+        router.add_api_route(
+            path=f"{self.prefix}{'/allRewards'}",
+            endpoint=self.hypervisors_rewards,
+            methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
+        )
+        router.add_api_route(
+            path=f"{self.prefix}{'/allRewards2'}",
+            endpoint=self.hypervisors_rewards2,
+            methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
+        )
+
+        return router
+
+    def _create_routes_users_rewards(
+        self, router: APIRouter, dex: str, chain: str
+    ) -> APIRouter:
+        router.add_api_route(
+            path=f"{self.prefix}{'/userRewards/{user_address}'}",
+            endpoint=self.user_rewards,
+            methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
+        )
+        router.add_api_route(
+            path=f"{self.prefix}{'/userRewards2/{user_address}'}",
+            endpoint=self.user_rewards2,
+            methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
+        )
+
+        return router
+
+    def _create_routes_users(
+        self, router: APIRouter, dex: str, chain: str
+    ) -> APIRouter:
+        router.add_api_route(
+            path=f"{self.prefix}{'/user/{address}'}",
+            endpoint=self.user_data,
+            methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
+        )
+        router.add_api_route(
+            path=f"{self.prefix}{'/user/{address}/analytics'}",
+            endpoint=self.user_analytics,
+            methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
+        )
+
+        return router
+
+    def _create_routes_vault(
+        self, router: APIRouter, dex: str, chain: str
+    ) -> APIRouter:
+        router.add_api_route(
+            path=f"{self.prefix}{'/vault/{address}'}",
+            endpoint=self.vault_data,
+            methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
+        )
+
+        return router
+
     # EXECUTION FUNCTIONS
     def root(self) -> str:
         return f"Gamma Strategies on {self.chain}'s {self.dex} "
@@ -319,4 +390,28 @@ class endpoint_builder_template(endpoint_builder_baseTemplate):
         return NotImplementedError(" function defaults not implemented yet")
 
     async def hypervisors_impermanentDivergence_monthly(self, response: Response):
+        return NotImplementedError(" function defaults not implemented yet")
+
+    # rewards
+    # TODO: one only function for hype rewards
+    async def hypervisors_rewards(self, response: Response):
+        return NotImplementedError(" function defaults not implemented yet")
+
+    async def hypervisors_rewards2(self, response: Response):
+        return NotImplementedError(" function defaults not implemented yet")
+
+    # TODO: one only function for user rewards
+    async def user_rewards(self, user_address: str, response: Response):
+        return NotImplementedError(" function defaults not implemented yet")
+
+    async def user_rewards2(self, user_address: str, response: Response):
+        return NotImplementedError(" function defaults not implemented yet")
+
+    async def user_data(self, address: str, response: Response):
+        return NotImplementedError(" function defaults not implemented yet")
+
+    async def user_analytics(self, address: str, response: Response):
+        return NotImplementedError(" function defaults not implemented yet")
+
+    async def vault_data(self, address: str, response: Response):
         return NotImplementedError(" function defaults not implemented yet")
