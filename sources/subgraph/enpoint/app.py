@@ -6,35 +6,40 @@ from fastapi_cache.decorator import cache
 from fastapi.middleware.cors import CORSMiddleware
 from endpoint.config.cache import CHARTS_CACHE_TIMEOUT
 
-from sources.subgraph.enpoint.routers import build_routes
+from sources.subgraph.enpoint.routers import build_routes, build_routes_compatible
 from sources.subgraph.enpoint import routers
 
-# from sources.subgraph.enums import Chain, Protocol
 from sources.subgraph.charts.daily import DailyChart
 
 
-def build_app() -> FastAPI:
-    app = FastAPI()
+def create_app(
+    title: str,
+    backwards_compatible: bool = False,
+):
+    app = FastAPI(title=title)
 
     # All deployments
     allDeployments = routers.subgraph_allDeployments(
         tags=["All Deployments"], prefix="/allDeployments"
     )
-    app.include_router(allDeployments.router, tags=allDeployments.tags)
+    app.include_router(allDeployments.router(), tags=allDeployments.tags)
 
-    # add subgraph routes to app
-    for route_builder in build_routes():
-        app.include_router(route_builder.router, tags=route_builder.tags)
+    # Add subgraph routes to app
+    for route_builder in (
+        build_routes() if not backwards_compatible else build_routes_compatible()
+    ):
+        app.include_router(route_builder.router(), tags=route_builder.tags)
 
     # Simulation
     sim = routers.router_builder_Simulator(tags=["Simulator"], prefix="/simulator")
-    app.include_router(sim.router, tags=sim.tags)
+    app.include_router(sim.router(), tags=sim.tags)
 
     # Allow CORS
     app.add_middleware(
         CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
     )
 
+    # Charts
     @app.get("/charts/dailyTvl")
     @cache(expire=CHARTS_CACHE_TIMEOUT)
     async def daily_tvl_chart_data(days: int = 24):

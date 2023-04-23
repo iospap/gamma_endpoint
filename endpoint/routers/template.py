@@ -1,6 +1,7 @@
+import re
 from fastapi import APIRouter, Response, status
 from fastapi_cache.decorator import cache
-
+from fastapi.routing import APIRoute
 
 from endpoint.config.cache import (
     ALLDATA_CACHE_TIMEOUT,
@@ -10,15 +11,33 @@ from endpoint.config.cache import (
 )
 
 
-class endpoint_builder_template:
+class endpoint_builder_baseTemplate:
+    def __init__(self, tags: list, prefix: str = ""):
+        self.tags = tags
+        self.prefix = prefix.removesuffix("/")
+
+    # ROUTEs BUILD FUNCTIONS
+    def router(self) -> APIRouter:
+        return None
+
+
+class endpoint_builder_template(endpoint_builder_baseTemplate):
     def __init__(
         self, dex: str, chain: str, tags: list | None = None, prefix: str = ""
     ):
+        super.__init__(tags=tags, prefix=prefix)
+
         self.dex = dex
         self.chain = chain
-        self.tags = tags or [f"{chain} - {dex}"]
-        # set root urs qithout the last /
-        self.prefix = self.prefix.removesuffix("/")
+        # set tags if not supplied
+        self.tags = self.tags or [f"{chain} - {dex}"]
+
+    def generate_unique_id(self, route: "APIRoute") -> str:
+        operation_id = f"{self.tags}_{route.name + route.path_format}"
+        operation_id = re.sub(r"\W", "_", operation_id)
+        assert route.methods
+        operation_id = operation_id + "_" + list(route.methods)[0].lower()
+        return operation_id
 
     # ROUTEs BUILD FUNCTIONS
     def router(self) -> APIRouter:
@@ -34,12 +53,15 @@ class endpoint_builder_template:
             path=f"{self.prefix}/",
             endpoint=self.root,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
         )
 
         # create hyperivisor routes
         router = self._create_routes_hypervisor(router=router, dex=dex, chain=chain)
 
         router = self._create_routes_hypervisor_analytics(router, dex, chain)
+
+        router = self._create_routes_hypervisors(router, dex, chain)
 
         return router
 
@@ -52,24 +74,28 @@ class endpoint_builder_template:
             path=f"{self.prefix}{'/hypervisor/{hypervisor_address}/basicStats'}",
             endpoint=self.hypervisor_basic_stats,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
         )
 
         router.add_api_route(
             path=f"{self.prefix}{'/hypervisor/{hypervisor_address}/returns'}",
             endpoint=self.hypervisor_returns,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
         )
 
         router.add_api_route(
             path=f"{self.prefix}{'/hypervisor/{hypervisor_address}/averageReturns'}",
             endpoint=self.hypervisor_average_returns,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
         )
 
         router.add_api_route(
             path=f"{self.prefix}{'/hypervisor/{hypervisor_address}/uncollectedFees'}",
             endpoint=self.hypervisor_uncollected_fees,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
         )
 
         return router
@@ -81,24 +107,28 @@ class endpoint_builder_template:
             path=f"{self.prefix}{'/hypervisor/{hypervisor_address}/analytics/basic/daily'}",
             endpoint=self.hypervisor_analytics_basic_daily,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
         )
 
         router.add_api_route(
             path=f"{self.prefix}{'/hypervisor/{hypervisor_address}/analytics/basic/weekly'}",
             endpoint=self.hypervisor_analytics_basic_weekly,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
         )
 
         router.add_api_route(
             path=f"{self.prefix}{'/hypervisor/{hypervisor_address}/analytics/basic/biweekly'}",
             endpoint=self.hypervisor_analytics_basic_biweekly,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
         )
 
         router.add_api_route(
             path=f"{self.prefix}{'/hypervisor/{hypervisor_address}/analytics/basic/monthly'}",
             endpoint=self.hypervisor_analytics_basic_monthly,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
         )
 
         return router
@@ -110,24 +140,28 @@ class endpoint_builder_template:
             path=f"{self.prefix}{'/hypervisors/aggregateStats'}",
             endpoint=self.hypervisors_aggregate_stats,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
         )
 
         router.add_api_route(
             path=f"{self.prefix}{'/hypervisors/recentFees'}",
             endpoint=self.hypervisors_recent_fees,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
         )
 
         router.add_api_route(
             path=f"{self.prefix}{'/hypervisors/returns'}",
             endpoint=self.hypervisors_returns,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
         )
 
         router.add_api_route(
             path=f"{self.prefix}{'/hypervisors/averageReturns'}",
             endpoint=self.hypervisors_average_returns,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
             description="Returns the average returns for all hypervisors.",
         )
 
@@ -135,50 +169,59 @@ class endpoint_builder_template:
             path=f"{self.prefix}{'/hypervisors/allData'}",
             endpoint=self.hypervisors_all_data,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
         )
 
         router.add_api_route(
             path=f"{self.prefix}{'/hypervisors/uncollectedFees'}",
             endpoint=self.hypervisors_uncollected_fees,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
         )
 
         router.add_api_route(
             path=f"{self.prefix}{'/hypervisors/collectedFees'}",
             endpoint=self.hypervisors_collected_fees,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
         )
 
         router.add_api_route(
             path=f"{self.prefix}{'/hypervisors/feeReturns/daily'}",
             endpoint=self.hypervisors_feeReturns_daily,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
         )
         router.add_api_route(
             path=f"{self.prefix}{'/hypervisors/feeReturns/weekly'}",
             endpoint=self.hypervisors_feeReturns_weekly,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
         )
         router.add_api_route(
             path=f"{self.prefix}{'/hypervisors/feeReturns/monthly'}",
             endpoint=self.hypervisors_feeReturns_monthly,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
         )
 
         router.add_api_route(
             path=f"{self.prefix}{'/hypervisors/impermanentDivergence/daily'}",
             endpoint=self.hypervisors_impermanentDivergence_daily,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
         )
         router.add_api_route(
             path=f"{self.prefix}{'/hypervisors/impermanentDivergence/weekly'}",
             endpoint=self.hypervisors_impermanentDivergence_weekly,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
         )
         router.add_api_route(
             path=f"{self.prefix}{'/hypervisors/impermanentDivergence/monthly'}",
             endpoint=self.hypervisors_impermanentDivergence_monthly,
             methods=["GET"],
+            generate_unique_id_function=self.generate_unique_id,
         )
 
         return router
@@ -277,14 +320,3 @@ class endpoint_builder_template:
 
     async def hypervisors_impermanentDivergence_monthly(self, response: Response):
         return NotImplementedError(" function defaults not implemented yet")
-
-
-class endpoint_builder_simpleTemplate:
-    def __init__(self, tags: list, prefix: str = ""):
-        self.tags = tags
-        # set root urs qithout the last /
-        self.prefix = prefix.removesuffix("/")
-
-    # ROUTEs BUILD FUNCTIONS
-    def router(self) -> APIRouter:
-        return None

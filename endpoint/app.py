@@ -1,9 +1,8 @@
 import logging
 
-from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from sources.subgraph.enpoint.app import build_app
+from sources.subgraph.enpoint.app import create_app as create_subgraph_endpoint
 
 logging.basicConfig(
     format="[%(asctime)s:%(levelname)s:%(name)s]:%(message)s",
@@ -12,12 +11,15 @@ logging.basicConfig(
 )
 
 
-app = FastAPI()
+app = create_subgraph_endpoint(title="Gamma API", backwards_compatible=True)
 
 # Allow CORS
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
 )
 
-app.mount("/subgraph", build_app())
-# app.mount("/api/v2", apiv2)
+app.mount(
+    path="/subgraph",
+    app=create_subgraph_endpoint(title="Gamma API", backwards_compatible=False),
+    name="subgraph",
+)

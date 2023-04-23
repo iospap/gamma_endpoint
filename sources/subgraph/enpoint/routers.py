@@ -2,7 +2,7 @@ import asyncio
 from fastapi import Response, APIRouter
 from endpoint.routers.template import (
     endpoint_builder_template,
-    endpoint_builder_simpleTemplate,
+    endpoint_builder_baseTemplate,
 )
 from sources.subgraph.common import hypervisor, analytics, aggregate_stats
 from sources.subgraph.simulator import SimulatorInfo
@@ -13,59 +13,164 @@ from sources.subgraph.enums import Chain, Protocol, QueryType
 RUN_FIRST = RUN_FIRST_QUERY_TYPE
 
 
-def build_routes(prefix: str = "") -> list:
+def build_routes() -> list:
     routes = []
 
     # setup dex + chain endpoints
     routes.append(
-        routes.subgraph_endpoint(
-            dex=Protocol.UNISWAP, chain=Chain.MAINNET, tags=["Mainnet"], prefix=prefix
+        subgraph_endpoint(
+            dex=Protocol.UNISWAP,
+            chain=Chain.MAINNET,
+            tags=["Uniswap - Ethereum"],
+            prefix=f"/{Protocol.UNISWAP.value}/{Chain.MAINNET.value}",
         )
     )
     routes.append(
-        routes.subgraph_endpoint(
-            dex=Protocol.UNISWAP, chain=Chain.POLYGON, tags=["Polygon"], prefix=prefix
+        subgraph_endpoint(
+            dex=Protocol.UNISWAP,
+            chain=Chain.POLYGON,
+            tags=["Uniswap - Polygon"],
+            prefix=f"/{Protocol.UNISWAP.value}/{Chain.POLYGON.value}",
         )
     )
     routes.append(
-        routes.subgraph_endpoint(
-            dex=Protocol.UNISWAP, chain=Chain.ARBITRUM, tags=["Arbitrum"], prefix=prefix
+        subgraph_endpoint(
+            dex=Protocol.UNISWAP,
+            chain=Chain.ARBITRUM,
+            tags=["Uniswap - Arbitrum"],
+            prefix=f"/{Protocol.UNISWAP.value}/{Chain.ARBITRUM.value}",
         )
     )
     routes.append(
-        routes.subgraph_endpoint(
-            dex=Protocol.UNISWAP, chain=Chain.OPTIMISM, tags=["Optimism"], prefix=prefix
+        subgraph_endpoint(
+            dex=Protocol.UNISWAP,
+            chain=Chain.OPTIMISM,
+            tags=["Uniswap - Optimism"],
+            prefix=f"/{Protocol.UNISWAP.value}/{Chain.OPTIMISM.value}",
         )
     )
     routes.append(
-        routes.subgraph_endpoint(
-            dex=Protocol.UNISWAP, chain=Chain.CELO, tags=["Celo"], prefix=prefix
+        subgraph_endpoint(
+            dex=Protocol.UNISWAP,
+            chain=Chain.CELO,
+            tags=["Uniswap - Celo"],
+            prefix=f"/{Protocol.UNISWAP.value}/{Chain.CELO.value}",
         )
     )
     routes.append(
-        routes.subgraph_endpoint(
-            dex=Protocol.UNISWAP, chain=Chain.BSC, tags=["Binance"], prefix=prefix
+        subgraph_endpoint(
+            dex=Protocol.UNISWAP,
+            chain=Chain.BSC,
+            tags=["Uniswap - Binance"],
+            prefix=f"/{Protocol.UNISWAP.value}/{Chain.BSC.value}",
         )
     )
     routes.append(
-        routes.subgraph_endpoint(
+        subgraph_endpoint(
             dex=Protocol.QUICKSWAP,
             chain=Chain.POLYGON,
             tags=["Quickswap - Polygon"],
-            prefix=prefix,
+            prefix=f"/{Protocol.QUICKSWAP.value}/{Chain.POLYGON.value}",
         )
     )
     routes.append(
-        routes.subgraph_endpoint(
+        subgraph_endpoint(
             dex=Protocol.ZYBERSWAP,
             chain=Chain.ARBITRUM,
             tags=["Zyberswap - Arbitrum"],
-            prefix=prefix,
+            prefix=f"/{Protocol.ZYBERSWAP.value}/{Chain.ARBITRUM.value}",
         )
     )
     routes.append(
-        routes.subgraph_endpoint(
-            dex=Protocol.THENA, chain=Chain.BSC, tags=["Thena - BSC"], prefix=prefix
+        subgraph_endpoint(
+            dex=Protocol.THENA,
+            chain=Chain.BSC,
+            tags=["Thena - BSC"],
+            prefix=f"/{Protocol.THENA.value}/{Chain.BSC.value}",
+        )
+    )
+
+    return routes
+
+
+def build_routes_compatible() -> list:
+    """Build backwards compatible routes for the old endpoint
+
+    Returns:
+        list: _description_
+    """
+    routes = []
+
+    # setup dex + chain endpoints
+    routes.append(
+        subgraph_endpoint(
+            dex=Protocol.UNISWAP,
+            chain=Chain.MAINNET,
+            tags=["Mainnet"],
+        )
+    )
+    routes.append(
+        subgraph_endpoint(
+            dex=Protocol.UNISWAP,
+            chain=Chain.POLYGON,
+            tags=["Polygon"],
+            prefix=f"/{Chain.POLYGON.value}",
+        )
+    )
+    routes.append(
+        subgraph_endpoint(
+            dex=Protocol.UNISWAP,
+            chain=Chain.ARBITRUM,
+            tags=["Arbitrum"],
+            prefix=f"/{Chain.ARBITRUM.value}",
+        )
+    )
+    routes.append(
+        subgraph_endpoint(
+            dex=Protocol.UNISWAP,
+            chain=Chain.OPTIMISM,
+            tags=["Optimism"],
+            prefix=f"/{Chain.OPTIMISM.value}",
+        )
+    )
+    routes.append(
+        subgraph_endpoint(
+            dex=Protocol.UNISWAP,
+            chain=Chain.CELO,
+            tags=["Celo"],
+            prefix=f"/{Chain.CELO.value}",
+        )
+    )
+    routes.append(
+        subgraph_endpoint(
+            dex=Protocol.UNISWAP,
+            chain=Chain.BSC,
+            tags=["BSC"],
+            prefix=f"/{Chain.BSC.value}",
+        )
+    )
+    routes.append(
+        subgraph_endpoint(
+            dex=Protocol.QUICKSWAP,
+            chain=Chain.POLYGON,
+            tags=["Quickswap - Polygon"],
+            prefix=f"/{Protocol.QUICKSWAP.value}/{Chain.POLYGON.value}",
+        )
+    )
+    routes.append(
+        subgraph_endpoint(
+            dex=Protocol.ZYBERSWAP,
+            chain=Chain.ARBITRUM,
+            tags=["Zyberswap - Arbitrum"],
+            prefix=f"/{Protocol.ZYBERSWAP.value}/{Chain.ARBITRUM.value}",
+        )
+    )
+    routes.append(
+        subgraph_endpoint(
+            dex=Protocol.THENA,
+            chain=Chain.BSC,
+            tags=["Thena - BSC"],
+            prefix=f"/{Protocol.THENA.value}/{Chain.BSC.value}",
         )
     )
 
@@ -204,7 +309,7 @@ class subgraph_endpoint(endpoint_builder_template):
         return await impermanent.run(first=RUN_FIRST)
 
 
-class subgraph_allDeployments(endpoint_builder_simpleTemplate):
+class subgraph_allDeployments(endpoint_builder_baseTemplate):
     # ROUTEs BUILD FUNCTIONS
     def router(self) -> APIRouter:
         router = APIRouter(prefix=self.prefix)
@@ -219,6 +324,7 @@ class subgraph_allDeployments(endpoint_builder_simpleTemplate):
         return router
 
     async def aggregate_stats(
+        self,
         response: Response,
     ) -> aggregate_stats.AggregateStatsDeploymentInfoOutput:
         results = await asyncio.gather(
@@ -250,7 +356,7 @@ class subgraph_allDeployments(endpoint_builder_simpleTemplate):
         )
 
 
-class router_builder_Simulator(endpoint_builder_simpleTemplate):
+class router_builder_Simulator(endpoint_builder_baseTemplate):
     # ROUTEs BUILD FUNCTIONS
     def router(self) -> APIRouter:
         router = APIRouter(prefix=self.prefix)
@@ -278,26 +384,26 @@ class router_builder_Simulator(endpoint_builder_simpleTemplate):
         )
         return router
 
-    async def token_list():
+    async def token_list(self):
         tokens = await SimulatorInfo(Protocol.UNISWAP, Chain.MAINNET).token_list()
 
         return tokens
 
-    async def pool_ticks(poolAddress: str):
+    async def pool_ticks(self, poolAddress: str):
         ticks = await SimulatorInfo(Protocol.UNISWAP, Chain.MAINNET).pool_ticks(
             poolAddress
         )
 
         return ticks
 
-    async def pool_from_tokens(token0: str, token1: str):
+    async def pool_from_tokens(self, token0: str, token1: str):
         pools = await SimulatorInfo(Protocol.UNISWAP, Chain.MAINNET).pools_from_tokens(
             token0, token1
         )
 
         return pools
 
-    async def pool_24hr_volume(poolAddress: str):
+    async def pool_24hr_volume(self, poolAddress: str):
         volume = await SimulatorInfo(Protocol.UNISWAP, Chain.MAINNET).pool_volume(
             poolAddress
         )
