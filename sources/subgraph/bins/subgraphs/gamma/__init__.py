@@ -9,5 +9,5 @@ class GammaClient(SubgraphClient):
             protocol=protocol,
             chain=chain,
             url=GAMMA_SUBGRAPH_URLS[protocol][chain],
-            schema_path="v3data/subgraphs/gamma/schema.graphql",
+            schema_path="sources.subgraph.bins/subgraphs/gamma/schema.graphql",
         )
