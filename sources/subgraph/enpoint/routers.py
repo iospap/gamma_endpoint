@@ -4,7 +4,14 @@ from endpoint.routers.template import (
     endpoint_builder_template,
     endpoint_builder_baseTemplate,
 )
-from sources.subgraph.bins.common import hypervisor, analytics, aggregate_stats
+from sources.subgraph.bins.common import (
+    hypervisor,
+    analytics,
+    aggregate_stats,
+    masterchef,
+    masterchef_v2,
+    users,
+)
 from sources.subgraph.bins.simulator import SimulatorInfo
 from sources.subgraph.bins.config import DEPLOYMENTS, RUN_FIRST_QUERY_TYPE
 from sources.subgraph.bins.enums import Chain, Protocol, QueryType
@@ -222,11 +229,37 @@ class subgraph_endpoint(endpoint_builder_template):
             chain=self.chain, hypervisor_address=hypervisor_address, period=1
         )
 
+    async def hypervisor_analytics_basic_weekly(
+        self, hypervisor_address: str, response: Response
+    ):
+        return await analytics.get_hype_data(
+            chain=self.chain, hypervisor_address=hypervisor_address, period=7
+        )
+
+    async def hypervisor_analytics_basic_biweekly(
+        self, hypervisor_address: str, response: Response
+    ):
+        return await analytics.get_hype_data(
+            chain=self.chain, hypervisor_address=hypervisor_address, period=14
+        )
+
     async def hypervisor_analytics_basic_monthly(
         self, hypervisor_address: str, response: Response
     ):
         return await analytics.get_hype_data(
             chain=self.chain, hypervisor_address=hypervisor_address, period=30
+        )
+
+    #    hypervisors
+    async def hypervisors_aggregate_stats(self, response: Response):
+        result = aggregate_stats.AggregateStats(
+            protocol=self.dex, chain=self.chain, response=response
+        )
+        return await result.run(RUN_FIRST)
+
+    async def hypervisors_recent_fees(self, response: Response, hours: int = 24):
+        return await hypervisor.recent_fees(
+            protocol=self.dex, chain=self.chain, hours=hours
         )
 
     async def hypervisors_returns(self, response: Response):
@@ -307,6 +340,41 @@ class subgraph_endpoint(endpoint_builder_template):
             protocol=self.dex, chain=self.chain, days=30, response=response
         )
         return await impermanent.run(first=RUN_FIRST)
+
+    # others
+    async def hypervisors_rewards(self, response: Response):
+        return await masterchef.info(protocol=self.dex, chain=self.chain)
+
+    async def hypervisors_rewards2(self, response: Response):
+        masterchef_v2_info = masterchef_v2.AllRewards2(
+            protocol=self.dex, chain=self.chain, response=response
+        )
+        return await masterchef_v2_info.run(RUN_FIRST)
+
+    async def user_rewards(self, user_address: str, response: Response):
+        return await masterchef.user_rewards(
+            protocol=self.dex, chain=self.chain, user_address=user_address
+        )
+
+    async def user_rewards2(self, user_address: str, response: Response):
+        return await masterchef_v2.user_rewards(
+            protocol=self.dex, chain=self.chain, user_address=user_address
+        )
+
+    async def user_data(self, address: str, response: Response):
+        return await users.user_data(
+            protocol=self.dex, chain=self.chain, address=address
+        )
+
+    async def user_analytics(self, address: str, response: Response):
+        return await users.get_user_analytic_data(
+            chain=self.chain, address=address.lower()
+        )
+
+    async def vault_data(self, address: str, response: Response):
+        return await users.account_data(
+            protocol=self.dex, chain=self.chain, address=address
+        )
 
 
 class subgraph_allDeployments(endpoint_builder_baseTemplate):
