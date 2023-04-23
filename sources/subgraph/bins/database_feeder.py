@@ -28,7 +28,6 @@ from sources.common.database.collection_endpoint import (
     db_aggregateStats_manager,
 )
 
-
 logging.basicConfig(
     format="[%(asctime)s:%(levelname)s:%(name)s]:%(message)s",
     datefmt="%Y/%m/%d %I:%M:%S",
@@ -79,7 +78,7 @@ async def feed_database_returns(
     name = "returns"
     logger.info(f" Starting database feeding process for {name} data")
     # start time log
-    _startime = datetime.utcnow()
+    _startime = datetime.now(timezone.utc)
 
     returns_manager = db_returns_manager(mongo_url=MONGO_DB_URL)
     returns_manager._max_retry = max_retries
@@ -107,7 +106,7 @@ async def feed_database_static():
     logger.debug(f"     excluded_hyp: {EXCLUDED_HYPERVISORS}")
 
     # start time log
-    _startime = datetime.utcnow()
+    _startime = datetime.now(timezone.utc)
 
     # static requests
     static_manager = db_static_manager(mongo_url=MONGO_DB_URL)
@@ -130,7 +129,7 @@ async def feed_database_allData():
     logger.debug(f"     excluded_hyp: {EXCLUDED_HYPERVISORS}")
 
     # start time log
-    _startime = datetime.utcnow()
+    _startime = datetime.now(timezone.utc)
 
     _manager = db_allData_manager(mongo_url=MONGO_DB_URL)
     requests = [
@@ -152,7 +151,7 @@ async def feed_database_allRewards2():
     name = "allRewards2"
     logger.info(f" Starting database feeding process for {name} data")
     # start time log
-    _startime = datetime.utcnow()
+    _startime = datetime.now(timezone.utc)
 
     _manager = db_allRewards2_manager(mongo_url=MONGO_DB_URL)
     requests = [
@@ -174,7 +173,7 @@ async def feed_database_aggregateStats():
     name = "aggregateStats"
     logger.info(f" Starting database feeding process for {name} data")
     # start time log
-    _startime = datetime.utcnow()
+    _startime = datetime.now(timezone.utc)
 
     _manager = db_aggregateStats_manager(mongo_url=MONGO_DB_URL)
     requests = [
@@ -195,18 +194,16 @@ async def feed_database_aggregateStats():
 # Multiple feeds in one
 async def feed_database_inSecuence():
     # start time log
-    _startime = datetime.utcnow()
+    _startime = datetime.now(timezone.utc)
 
     await feed_database_static()
     await feed_database_allData()
 
-    _endtime = datetime.utcnow()
+    _endtime = datetime.now(timezone.utc)
     if (_endtime - _startime).total_seconds() > (60 * 2):
         # end time log
         logger.warning(
-            " Consider increasing cron schedule ->  took {} to complete database feeder loop.".format(
-                get_timepassed_string(_startime, _endtime)
-            )
+            f" Consider increasing cron schedule ->  took {get_timepassed_string(_startime, _endtime)} to complete database feeder loop."
         )
 
 
@@ -227,9 +224,9 @@ async def feed_database_with_historic_data(from_datetime: datetime, periods=None
         periods (list): list of periods as ["daily", "weekly", "monthly"]
     """
     # final log var
-    processed_datetime_strings = list()
+    processed_datetime_strings = []
 
-    last_time = datetime.utcnow()
+    last_time = datetime.now(timezone.utc)
 
     # define periods when empty
     if not periods:
@@ -249,7 +246,7 @@ async def feed_database_with_historic_data(from_datetime: datetime, periods=None
                 datetime.utcfromtimestamp(current_timestamp)
             )
             processed_datetime_strings.append(txt_timestamp)
-            logger.info(" Feeding {} database at  {}".format(period, txt_timestamp))
+            logger.info(f" Feeding {period} database at  {txt_timestamp}")
 
             # database feed
             await feed_database_returns(
@@ -261,7 +258,7 @@ async def feed_database_with_historic_data(from_datetime: datetime, periods=None
             # set next timestamp
             current_timestamp = c_iter.get_next(start_time=current_timestamp)
 
-    logger.info(" Processed dates: {} ".format(processed_datetime_strings))
+    logger.info(f" Processed dates: {processed_datetime_strings} ")
 
 
 def convert_commandline_arguments(argv) -> dict:
@@ -275,29 +272,11 @@ def convert_commandline_arguments(argv) -> dict:
     """
 
     # GET COMMAND LINE ARGUMENTS
-    prmtrs = dict()  # the parameters we will pass to simulation creation
-    prmtrs["historic"] = False
-
+    prmtrs = {"historic": False}
     try:
         opts, args = getopt.getopt(argv, "hs:m:", ["historic", "start=", "manual="])
     except getopt.GetoptError as err:
-        print("             <filename>.py <options>")
-        print("Options:")
-        print(" -s <start date> or --start=<start date>")
-        print(" -m <option> or --manual=<option>")
-        print("           <option> being: secuence")
-        print(" ")
-        print(" ")
-        print(" ")
-        print("to feed database with current data  (infinite loop):")
-        print("             <filename>.py")
-        print("to feed database with historic data: (no quickswap)")
-        print("             <filename>.py -h")
-        print("             <filename>.py -s <start date as %Y-%m-%d>")
-        print("error message: {}".format(err.msg))
-        print("opt message: {}".format(err.opt))
-        sys.exit(2)
-
+        _cmd_print_help(err)
     # loop and retrieve each command
     for opt, arg in opts:
         if opt in ("-s", "start="):
@@ -311,9 +290,28 @@ def convert_commandline_arguments(argv) -> dict:
     return prmtrs
 
 
+def _cmd_print_help(err):
+    print("             <filename>.py <options>")
+    print("Options:")
+    print(" -s <start date> or --start=<start date>")
+    print(" -m <option> or --manual=<option>")
+    print("           <option> being: secuence")
+    print(" ")
+    print(" ")
+    print(" ")
+    print("to feed database with current data  (infinite loop):")
+    print("             <filename>.py")
+    print("to feed database with historic data: (no quickswap)")
+    print("             <filename>.py -h")
+    print("             <filename>.py -s <start date as %Y-%m-%d>")
+    print(f"error message: {err.msg}")
+    print(f"opt message: {err.opt}")
+    sys.exit(2)
+
+
 def get_timepassed_string(start_time: datetime, end_time: datetime = None) -> str:
     if not end_time:
-        end_time = datetime.utcnow()
+        end_time = datetime.now(timezone.utc)
     _timelapse = end_time - start_time
     _passed = _timelapse.total_seconds()
     if _passed < 60:
@@ -357,32 +355,30 @@ if __name__ == "__main__":
         logger.info(" ")
 
         # start time log
-        _startime = datetime.utcnow()
+        _startime = datetime.now(timezone.utc)
 
         asyncio.run(feed_database_with_historic_data(from_datetime=from_datetime))
 
         # end time log
         logger.info(
-            " took {} to complete the historic feed".format(
-                get_timepassed_string(_startime)
-            )
+            f" took {get_timepassed_string(_startime)} to complete the historic feed"
         )
+
     elif "manual" in cml_parameters:
         logger.info(" Starting one-time manual execution ")
         logger.info(f"     chains prot.: {CHAINS_PROTOCOLS}")
         logger.info(f"     excluded_hyp: {EXCLUDED_HYPERVISORS}")
 
         # start time log
-        _startime = datetime.utcnow()
+        _startime = datetime.now(timezone.utc)
 
         asyncio.run(feed_all())
 
         # end time log
         logger.info(
-            " took {} to complete the sequencer feed".format(
-                get_timepassed_string(_startime)
-            )
+            f" took {get_timepassed_string(_startime)} to complete the sequencer feed"
         )
+
     else:
         # actual feed
         logger.info(" Starting loop feed  ")
@@ -398,7 +394,7 @@ if __name__ == "__main__":
                 crons[f"{function}_{key}"] = crontab(
                     cron_ex_format,
                     func=EXPR_FUNCS[function],
-                    args=args if args else (),
+                    args=args or (),
                     loop=loop,
                     start=True,
                     tz=timezone.utc,
