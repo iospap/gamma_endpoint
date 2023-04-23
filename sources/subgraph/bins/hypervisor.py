@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import logging
 
-from sources.subgraph import GammaClient, UniswapV3Client
+from sources.subgraph.bins import GammaClient, UniswapV3Client
 from sources.subgraph.bins.config import EXCLUDED_HYPERVISORS
 from sources.subgraph.bins.constants import DAYS_IN_PERIOD
 from sources.subgraph.bins.enums import Chain, Protocol

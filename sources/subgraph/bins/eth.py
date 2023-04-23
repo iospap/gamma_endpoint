@@ -1,4 +1,4 @@
-from sources.subgraph import GammaClient
+from sources.subgraph.bins import GammaClient
 from sources.subgraph.bins.config import DEFAULT_TIMEZONE
 from sources.subgraph.bins.enums import Chain, Protocol
 from sources.subgraph.bins.utils import timestamp_to_date

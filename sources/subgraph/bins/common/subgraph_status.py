@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from sources.subgraph import IndexNodeClient
+from sources.subgraph.bins import IndexNodeClient
 from sources.subgraph.bins.enums import Chain, Protocol
 
 

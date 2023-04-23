@@ -1,7 +1,7 @@
 from gql.dsl import DSLQuery
 from httpx import HTTPStatusError
 
-from sources.subgraph import LlamaClient
+from sources.subgraph.bins import LlamaClient
 from sources.subgraph.bins.constants import DAY_SECONDS
 from sources.subgraph.bins.enums import Chain
 from sources.subgraph.bins.hype_fees.schema import Time

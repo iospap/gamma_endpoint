@@ -1,7 +1,7 @@
 import asyncio
 from collections import defaultdict
 
-from sources.subgraph import UniswapV3Client, LlamaClient
+from sources.subgraph.bins import UniswapV3Client, LlamaClient
 from sources.subgraph.bins.enums import Chain, Protocol
 from sources.subgraph.bins.utils import sqrtPriceX96_to_priceDecimal
 

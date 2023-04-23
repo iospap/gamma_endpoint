@@ -1,6 +1,6 @@
 import asyncio
 
-from sources.subgraph import GammaClient
+from sources.subgraph.bins import GammaClient
 from sources.subgraph.bins.accounts import AccountInfo
 from sources.subgraph.bins.constants import XGAMMA_ADDRESS
 from sources.subgraph.bins.enums import Chain, Protocol

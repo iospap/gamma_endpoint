@@ -1,4 +1,4 @@
-from sources.subgraph import UniswapV3Client
+from sources.subgraph.bins import UniswapV3Client
 from sources.subgraph.bins.enums import Chain, Protocol
 
 
