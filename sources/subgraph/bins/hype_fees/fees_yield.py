@@ -34,9 +34,18 @@ class FeesYield:
             )
 
         df_snapshots = df_snapshots.set_index("block").sort_index()
+        # fee % is 1 / fee or 1/10 if fee > 100
+        df_snapshots["fee_calc"] = df_snapshots["fee"].apply(
+            lambda x: 1 / x if x < 100 else 1 / 10
+        )
+        df_snapshots["gamma_fee_0"] = df_snapshots.total_fees_0 * df_snapshots.fee_calc
+        df_snapshots["gamma_fee_1"] = df_snapshots.total_fees_1 * df_snapshots.fee_calc
+        df_snapshots["lp_fee_0"] = df_snapshots.total_fees_0 - df_snapshots.gamma_fee_0
+        df_snapshots["lp_fee_1"] = df_snapshots.total_fees_1 - df_snapshots.gamma_fee_1
+
         df_snapshots["elapsed_time"] = df_snapshots.timestamp.diff()
-        df_snapshots["fee0_growth"] = df_snapshots.total_fees_0.diff().clip(lower=0)
-        df_snapshots["fee1_growth"] = df_snapshots.total_fees_1.diff().clip(lower=0)
+        df_snapshots["fee0_growth"] = df_snapshots.lp_fee_0.diff().clip(lower=0)
+        df_snapshots["fee1_growth"] = df_snapshots.lp_fee_1.diff().clip(lower=0)
 
         df_snapshots["fee_growth_usd"] = (
             df_snapshots.fee0_growth * df_snapshots.price_0
@@ -98,6 +107,7 @@ class FeesYield:
         return FeesSnapshot(
             block=fees_data.block,
             timestamp=fees_data.timestamp,
+            fee=fees_data.fee,
             tvl_usd=fees_data.tvl_usd,
             total_fees_0=fee_amounts.total.amount.value0,
             total_fees_1=fee_amounts.total.amount.value1,

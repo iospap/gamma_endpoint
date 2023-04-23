@@ -70,6 +70,10 @@ class HypePoolClient(SubgraphClient):
             ds_hypervisor.basePosition.select(position_fields_fragment),
             ds_hypervisor.limitPosition.select(position_fields_fragment),
         )
+
+        if self.protocol == Protocol.THENA and self.chain == Chain.BSC:
+            frag.select(ds_hypervisor.fee)
+
         return frag
 
     @fragment
@@ -126,4 +130,8 @@ class HypePoolClient(SubgraphClient):
                 position_snapshot_fields_fragment
             ),
         )
+
+        if self.protocol == Protocol.THENA and self.chain == Chain.BSC:
+            frag.select(ds_fee_collection_snapshot.fee)
+
         return frag

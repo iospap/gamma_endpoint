@@ -14,18 +14,6 @@ class Time:
 
 
 @dataclass
-class ValueWithDecimal:
-    raw: int
-    adjusted: float = field(init=False)
-    decimals: int
-
-    def __post_init__(self):
-        self.raw = int(self.raw)
-        self.decimals = int(self.decimals)
-        self.adjusted = self.raw / 10**self.decimals
-
-
-@dataclass
 class _TokenPair:
     value0: ValueWithDecimal = field(init=False)
     value1: ValueWithDecimal = field(init=False)
@@ -153,7 +141,8 @@ class FeesData:
     timestamp: int
     hypervisor: str
     symbol: str
-    currentTick: int
+    current_tick: int
+    fee: int
     price: _TokenPairDecimals = field(init=False)
     decimals: _TokenPairInt = field(init=False)
     tvl: _TokenPair = field(init=False)
@@ -232,8 +221,9 @@ class FeesData:
     ):
         self.block = int(self.block)
         self.timestamp = int(self.timestamp)
-        self.currentTick = int(self.currentTick)
+        self.current_tick = int(self.current_tick)
         self.tvl_usd = float(self.tvl_usd)
+        self.fee = int(self.fee)
 
         self.price = _TokenPairDecimals(value0=price0, value1=price1)
         self.decimals = _TokenPairInt(value0=decimals0, value1=decimals1)
@@ -445,7 +435,7 @@ class UncollectedFees:
             fees0_x128=limit_fees0_x128,
             fees1_x128=limit_fees1_x128,
             owed0_x128=limit_owed0_x128,
-            owed1_x128=base_owed1_x128,
+            owed1_x128=limit_owed1_x128,
             decimals0=decimals0,
             decimals1=decimals1,
             price0=price0,
@@ -476,6 +466,7 @@ class UncollectedFees:
 class FeesSnapshot:
     block: int
     timestamp: int
+    fee: int
     tvl_usd: float
     total_fees_0: float
     total_fees_1: float
@@ -485,6 +476,7 @@ class FeesSnapshot:
     def __post_init__(self):
         self.block = int(self.block)
         self.timestamp = int(self.timestamp)
+        self.fee = int(self.fee)
         self.tvl_usd = float(self.tvl_usd)
         self.total_fees_0 = float(self.total_fees_0)
         self.total_fees_1 = float(self.total_fees_1)
