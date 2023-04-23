@@ -1,5 +1,7 @@
 import asyncio
-from fastapi import Response, APIRouter
+from fastapi import Response, APIRouter, status
+from fastapi_cache.decorator import cache
+
 from endpoint.routers.template import (
     endpoint_builder_template,
     endpoint_builder_baseTemplate,
@@ -12,16 +14,36 @@ from sources.subgraph.bins.common import (
     masterchef_v2,
     users,
 )
+from sources.subgraph.bins.charts.daily import DailyChart
+from sources.subgraph.bins.dashboard import Dashboard
+from sources.subgraph.bins.eth import EthDistribution
+from sources.subgraph.bins.gamma import GammaDistribution, GammaInfo, GammaYield
 from sources.subgraph.bins.simulator import SimulatorInfo
-from sources.subgraph.bins.config import DEPLOYMENTS, RUN_FIRST_QUERY_TYPE
+from sources.subgraph.bins.config import (
+    DEPLOYMENTS,
+    RUN_FIRST_QUERY_TYPE,
+    DEFAULT_TIMEZONE,
+)
 from sources.subgraph.bins.enums import Chain, Protocol, QueryType
 
+from endpoint.config.cache import (
+    ALLDATA_CACHE_TIMEOUT,
+    APY_CACHE_TIMEOUT,
+    DASHBOARD_CACHE_TIMEOUT,
+    DB_CACHE_TIMEOUT,
+    CHARTS_CACHE_TIMEOUT,
+)
 
 RUN_FIRST = RUN_FIRST_QUERY_TYPE
 
 
 def build_routes() -> list:
     routes = []
+
+    # all-deployments
+    routes.append(
+        subgraph_allDeployments(tags=["All Deployments"], prefix="/allDeployments")
+    )
 
     # setup dex + chain endpoints
     routes.append(
@@ -97,6 +119,12 @@ def build_routes() -> list:
         )
     )
 
+    # Simulation
+    routes.append(router_builder_Simulator(tags=["Simulator"], prefix="/simulator"))
+
+    # Charts
+    routes.append(router_builder_Charts(tags=["Charts"], prefix="/charts"))
+
     return routes
 
 
@@ -108,9 +136,14 @@ def build_routes_compatible() -> list:
     """
     routes = []
 
-    # setup dex + chain endpoints
+    # all-deployments
     routes.append(
-        subgraph_endpoint(
+        subgraph_allDeployments(tags=["All Deployments"], prefix="/allDeployments")
+    )
+
+    # add Mainnet
+    routes.append(
+        subgraph_endpoint_compatible(
             dex=Protocol.UNISWAP,
             chain=Chain.MAINNET,
             tags=["Mainnet"],
@@ -181,6 +214,11 @@ def build_routes_compatible() -> list:
         )
     )
 
+    # Simulation
+    routes.append(router_builder_Simulator(tags=["Simulator"], prefix="/simulator"))
+
+    routes.append(router_builder_Charts(tags=["Charts"], prefix="/charts"))
+
     return routes
 
 
@@ -192,6 +230,7 @@ class subgraph_endpoint(endpoint_builder_template):
             self.dex, self.chain, hypervisor_address, response
         )
 
+    @cache(expire=APY_CACHE_TIMEOUT)
     async def hypervisor_returns(self, hypervisor_address: str, response: Response):
         hypervisor_returns = hypervisor.HypervisorsReturnsAllPeriods(
             protocol=self.dex,
@@ -201,6 +240,7 @@ class subgraph_endpoint(endpoint_builder_template):
         )
         return await hypervisor_returns.run(RUN_FIRST)
 
+    @cache(expire=DB_CACHE_TIMEOUT)
     async def hypervisor_average_returns(
         self, hypervisor_address: str, response: Response
     ):
@@ -222,6 +262,7 @@ class subgraph_endpoint(endpoint_builder_template):
         )
 
     #    hypervisor analytics
+    @cache(expire=APY_CACHE_TIMEOUT)
     async def hypervisor_analytics_basic_daily(
         self, hypervisor_address: str, response: Response
     ):
@@ -229,6 +270,7 @@ class subgraph_endpoint(endpoint_builder_template):
             chain=self.chain, hypervisor_address=hypervisor_address, period=1
         )
 
+    @cache(expire=APY_CACHE_TIMEOUT)
     async def hypervisor_analytics_basic_weekly(
         self, hypervisor_address: str, response: Response
     ):
@@ -236,6 +278,7 @@ class subgraph_endpoint(endpoint_builder_template):
             chain=self.chain, hypervisor_address=hypervisor_address, period=7
         )
 
+    @cache(expire=APY_CACHE_TIMEOUT)
     async def hypervisor_analytics_basic_biweekly(
         self, hypervisor_address: str, response: Response
     ):
@@ -243,6 +286,7 @@ class subgraph_endpoint(endpoint_builder_template):
             chain=self.chain, hypervisor_address=hypervisor_address, period=14
         )
 
+    @cache(expire=APY_CACHE_TIMEOUT)
     async def hypervisor_analytics_basic_monthly(
         self, hypervisor_address: str, response: Response
     ):
@@ -262,17 +306,20 @@ class subgraph_endpoint(endpoint_builder_template):
             protocol=self.dex, chain=self.chain, hours=hours
         )
 
+    @cache(expire=APY_CACHE_TIMEOUT)
     async def hypervisors_returns(self, response: Response):
         hypervisor_returns = hypervisor.HypervisorsReturnsAllPeriods(
             protocol=self.dex, chain=self.chain, hypervisors=None, response=response
         )
         return await hypervisor_returns.run(RUN_FIRST)
 
+    @cache(expire=DB_CACHE_TIMEOUT)
     async def hypervisors_average_returns(self, response: Response):
         return await hypervisor.hypervisors_average_return(
             protocol=self.dex, chain=self.chain, response=response
         )
 
+    @cache(expire=ALLDATA_CACHE_TIMEOUT)
     async def hypervisors_all_data(self, response: Response):
         all_data = hypervisor.AllData(
             protocol=self.dex, chain=self.chain, response=response
@@ -305,36 +352,42 @@ class subgraph_endpoint(endpoint_builder_template):
             end_block=end_block,
         )
 
+    @cache(expire=APY_CACHE_TIMEOUT)
     async def hypervisors_feeReturns_daily(self, response: Response):
         fee_returns = hypervisor.FeeReturns(
             protocol=self.dex, chain=self.chain, days=1, response=response
         )
         return await fee_returns.run(RUN_FIRST)
 
+    @cache(expire=APY_CACHE_TIMEOUT)
     async def hypervisors_feeReturns_weekly(self, response: Response):
         fee_returns = hypervisor.FeeReturns(
             protocol=self.dex, chain=self.chain, days=7, response=response
         )
         return await fee_returns.run(RUN_FIRST)
 
+    @cache(expire=APY_CACHE_TIMEOUT)
     async def hypervisors_feeReturns_monthly(self, response: Response):
         fee_returns = hypervisor.FeeReturns(
             protocol=self.dex, chain=self.chain, days=30, response=response
         )
         return await fee_returns.run(RUN_FIRST)
 
+    @cache(expire=APY_CACHE_TIMEOUT)
     async def hypervisors_impermanentDivergence_daily(self, response: Response):
         impermanent = hypervisor.ImpermanentDivergence(
             protocol=self.dex, chain=self.chain, days=1, response=response
         )
         return await impermanent.run(first=RUN_FIRST)
 
+    @cache(expire=APY_CACHE_TIMEOUT)
     async def hypervisors_impermanentDivergence_weekly(self, response: Response):
         impermanent = hypervisor.ImpermanentDivergence(
             protocol=self.dex, chain=self.chain, days=7, response=response
         )
         return await impermanent.run(first=RUN_FIRST)
 
+    @cache(expire=APY_CACHE_TIMEOUT)
     async def hypervisors_impermanentDivergence_monthly(self, response: Response):
         impermanent = hypervisor.ImpermanentDivergence(
             protocol=self.dex, chain=self.chain, days=30, response=response
@@ -377,6 +430,89 @@ class subgraph_endpoint(endpoint_builder_template):
         )
 
 
+class subgraph_endpoint_compatible(subgraph_endpoint):
+    def _create_routes(self, dex, chain) -> APIRouter:
+        """Create routes for the given chain and dex combination."""
+
+        router = super()._create_routes(dex=dex, chain=chain)
+
+        router.add_api_route(
+            path="/visr/basicStats",
+            endpoint=self.gamma_basic_stats,
+            methods=["GET"],
+        )
+        router.add_api_route(
+            path="/gamma/basicStats",
+            endpoint=self.gamma_basic_stats,
+            methods=["GET"],
+        )
+        router.add_api_route(
+            path="/visr/yield",
+            endpoint=self.gamma_yield,
+            methods=["GET"],
+        )
+        router.add_api_route(
+            path="/gamma/yield",
+            endpoint=self.gamma_yield,
+            methods=["GET"],
+        )
+        router.add_api_route(
+            path="/{token_symbol}/dailyDistribution",
+            endpoint=self.token_distributions,
+            methods=["GET"],
+        )
+        router.add_api_route(
+            path="/dashboard",
+            endpoint=self.dashboard,
+            methods=["GET"],
+        )
+
+        return router
+
+    async def gamma_basic_stats(self, response: Response):
+        result = GammaInfo(Chain.MAINNET, days=30)
+        return await result.output()
+
+    async def gamma_yield(self, response: Response):
+        result = GammaYield(Chain.MAINNET, days=30)
+        return await result.output()
+
+    @cache(expire=DASHBOARD_CACHE_TIMEOUT)
+    async def dashboard(self, response: Response, period: str = "weekly"):
+        result = Dashboard(period.lower())
+
+        return await result.info("UTC")
+
+    async def token_distributions(
+        self,
+        response: Response,
+        token_symbol: str = "gamma",
+        days: int = 6,
+        timezone: str = DEFAULT_TIMEZONE,
+    ):
+        token_symbol = token_symbol.lower()
+        timezone = timezone.upper()
+
+        if token_symbol not in ["gamma", "visr", "eth"]:
+            response.status_code = status.HTTP_400_BAD_REQUEST
+            return "Only GAMMA, VISR and ETH supported"
+
+        if timezone not in ["UTC", "UTC-5"]:
+            response.status_code = status.HTTP_400_BAD_REQUEST
+            return "Only UTC and UTC-5 timezones supported"
+
+        distribution_class_map = {
+            "gamma": GammaDistribution,
+            "visr": GammaDistribution,
+            "eth": EthDistribution,
+        }
+
+        token_distributions = distribution_class_map[token_symbol](
+            self.chain, days=60, timezone=timezone
+        )
+        return await token_distributions.output(days)
+
+
 class subgraph_allDeployments(endpoint_builder_baseTemplate):
     # ROUTEs BUILD FUNCTIONS
     def router(self) -> APIRouter:
@@ -386,6 +522,24 @@ class subgraph_allDeployments(endpoint_builder_baseTemplate):
         router.add_api_route(
             path="/hypervisors/aggregateStats",
             endpoint=self.aggregate_stats,
+            methods=["GET"],
+        )
+
+        router.add_api_route(
+            path="/dashboard",
+            endpoint=self.dashboard,
+            methods=["GET"],
+        )
+
+        router.add_api_route(
+            path="/gamma/basicStats",
+            endpoint=self.gamma_basic_stats,
+            methods=["GET"],
+        )
+
+        router.add_api_route(
+            path="/gamma/yield",
+            endpoint=self.gamma_yield,
             methods=["GET"],
         )
 
@@ -422,6 +576,20 @@ class subgraph_allDeployments(endpoint_builder_baseTemplate):
             totalFeesClaimedUSD=aggregated_results.totalFeesClaimedUSD,
             deployments=included_deployments,
         )
+
+    async def gamma_basic_stats(self, response: Response):
+        result = GammaInfo(Chain.MAINNET, days=30)
+        return await result.output()
+
+    async def gamma_yield(self, response: Response):
+        result = GammaYield(Chain.MAINNET, days=30)
+        return await result.output()
+
+    @cache(expire=DASHBOARD_CACHE_TIMEOUT)
+    async def dashboard(self, response: Response, period: str = "weekly"):
+        result = Dashboard(period.lower())
+
+        return await result.info("UTC")
 
 
 class router_builder_Simulator(endpoint_builder_baseTemplate):
@@ -477,3 +645,44 @@ class router_builder_Simulator(endpoint_builder_baseTemplate):
         )
 
         return volume
+
+
+class router_builder_Charts(endpoint_builder_baseTemplate):
+    # ROUTEs BUILD FUNCTIONS
+    def router(self) -> APIRouter:
+        router = APIRouter(prefix=self.prefix)
+
+        #
+        router.add_api_route(
+            path="/dailyTvl",
+            endpoint=self.daily_tvl_chart_data,
+            methods=["GET"],
+        )
+        router.add_api_route(
+            path="/dailyFlows",
+            endpoint=self.daily_flows_chart_data,
+            methods=["GET"],
+        )
+        router.add_api_route(
+            path="/dailyHypervisorFlows/{hypervisor_address}",
+            endpoint=self.daily_hypervisor_flows_chart_data,
+            methods=["GET"],
+        )
+
+        return router
+
+    # Charts
+    @cache(expire=CHARTS_CACHE_TIMEOUT)
+    async def daily_tvl_chart_data(days: int = 24):
+        daily = DailyChart(days)
+        return {"data": await daily.tvl()}
+
+    async def daily_flows_chart_data(days: int = 20):
+        daily = DailyChart(days)
+        return {"data": await daily.asset_flows()}
+
+    async def daily_hypervisor_flows_chart_data(
+        hypervisor_address: str, days: int = 20
+    ):
+        daily = DailyChart(days)
+        return {"data": await daily.asset_flows(hypervisor_address)}
