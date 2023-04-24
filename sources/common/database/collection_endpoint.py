@@ -1945,6 +1945,7 @@ class database_local(db_collections_common):
                     "block": False,
                     "timestamp": False,
                 },
+                "rewards_static": {"id": True, "address": False},
             }
 
         super().__init__(
