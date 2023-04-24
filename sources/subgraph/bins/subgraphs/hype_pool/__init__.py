@@ -14,7 +14,7 @@ class HypePoolClient(SubgraphClient):
         self.chain = chain
         super().__init__(
             url=DEX_HYPEPOOL_SUBGRAPH_URLS[protocol][chain],
-            schema_path="v3data/subgraphs/hype_pool/schema.graphql",
+            schema_path="sources/subgraph/bins/subgraphs/hype_pool/schema.graphql",
         )
 
     @fragment
