@@ -155,7 +155,7 @@ async def fee_returns_all(
         fees_yield = FeesYield(fees_data, protocol, chain)
 
         returns = (
-            fees_yield.calculate_returns(aprType=apr_type)
+            fees_yield.calculate_returns(apr_type=apr_type)
             if apr_type
             else fees_yield.calculate_returns()
         )
