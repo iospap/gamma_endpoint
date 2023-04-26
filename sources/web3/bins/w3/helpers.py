@@ -98,14 +98,15 @@ def build_hypervisor_anyRpc(
                 dex=dex,
                 block=block,
                 hypervisor_address=hypervisor_address,
-                rpcUrl=rpcUrl,
+                custom_web3Url=rpcUrl,
             )
             # test its working
             hypervisor.fee
             # return hype
             return hypervisor
-        except:
+        except Exception as e:
             # not working hype
+            print(e)
             pass
 
     return None

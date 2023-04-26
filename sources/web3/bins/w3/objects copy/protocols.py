@@ -1,4 +1,3 @@
-import asyncio
 import contextlib
 import logging
 
@@ -44,95 +43,83 @@ class gamma_hypervisor(erc20):
 
     # PROPERTIES
     @property
-    async def baseUpper(self) -> int:
+    def baseUpper(self) -> int:
         """baseUpper _summary_
 
         Returns:
             _type_: 0 int24
         """
-        return await self._contract.functions.baseUpper().call(
-            block_identifier=self.block
-        )
+        return self._contract.functions.baseUpper().call(block_identifier=self.block)
 
     @property
-    async def baseLower(self) -> int:
+    def baseLower(self) -> int:
         """baseLower _summary_
 
         Returns:
             _type_: 0 int24
         """
-        return await self._contract.functions.baseLower().call(
-            block_identifier=self.block
-        )
+        return self._contract.functions.baseLower().call(block_identifier=self.block)
 
     @property
-    async def currentTick(self) -> int:
+    def currentTick(self) -> int:
         """currentTick _summary_
 
         Returns:
             int: -78627 int24
         """
-        return await self._contract.functions.currentTick().call(
-            block_identifier=self.block
-        )
+        return self._contract.functions.currentTick().call(block_identifier=self.block)
 
     @property
-    async def deposit0Max(self) -> int:
+    def deposit0Max(self) -> int:
         """deposit0Max _summary_
 
         Returns:
             float: 1157920892373161954234007913129639935 uint256
         """
-        return await self._contract.functions.deposit0Max().call(
-            block_identifier=self.block
-        )
+        return self._contract.functions.deposit0Max().call(block_identifier=self.block)
 
     @property
-    async def deposit1Max(self) -> int:
+    def deposit1Max(self) -> int:
         """deposit1Max _summary_
 
         Returns:
             int: 115792089237 uint256
         """
-        return await self._contract.functions.deposit1Max().call(
-            block_identifier=self.block
-        )
+        return self._contract.functions.deposit1Max().call(block_identifier=self.block)
 
     # v1 contracts have no directDeposit
     @property
-    async def directDeposit(self) -> bool:
+    def directDeposit(self) -> bool:
         """v1 contracts have no directDeposit function
 
         Returns:
             bool:
         """
-        return await self._contract.functions.directDeposit().call(
+        return self._contract.functions.directDeposit().call(
             block_identifier=self.block
         )
 
     @property
-    async def fee(self) -> int:
+    def fee(self) -> int:
         """fee _summary_
 
         Returns:
             int: 10 uint8
         """
-        return await self._contract.functions.fee().call(block_identifier=self.block)
+        return self._contract.functions.fee().call(block_identifier=self.block)
 
     # v1 contracts have no feeRecipient
     @property
-    async def feeRecipient(self) -> str:
+    def feeRecipient(self) -> str:
         """v1 contracts have no feeRecipient function
 
         Returns:
             str: address
         """
-        return await self._contract.functions.feeRecipient().call(
-            block_identifier=self.block
-        )
+        return self._contract.functions.feeRecipient().call(block_identifier=self.block)
 
     @property
-    async def getBasePosition(self) -> dict:
+    def getBasePosition(self) -> dict:
         """
         Returns:
            dict:   {
@@ -141,7 +128,7 @@ class gamma_hypervisor(erc20):
                amount1     565062023318300677907  uint256
                }
         """
-        tmp = await self._contract.functions.getBasePosition().call(
+        tmp = self._contract.functions.getBasePosition().call(
             block_identifier=self.block
         )
         return {
@@ -151,7 +138,7 @@ class gamma_hypervisor(erc20):
         }
 
     @property
-    async def getLimitPosition(self) -> dict:
+    def getLimitPosition(self) -> dict:
         """
         Returns:
            dict:   {
@@ -160,7 +147,7 @@ class gamma_hypervisor(erc20):
                amount1     565062023318300677907 uint256
                }
         """
-        tmp = await self._contract.functions.getLimitPosition().call(
+        tmp = self._contract.functions.getLimitPosition().call(
             block_identifier=self.block
         )
         return {
@@ -170,14 +157,14 @@ class gamma_hypervisor(erc20):
         }
 
     @property
-    async def getTotalAmounts(self) -> dict:
+    def getTotalAmounts(self) -> dict:
         """
 
         Returns:
            _type_: total0   2902086313 uint256
                    total1  565062023318300678136 uint256
         """
-        tmp = await self._contract.functions.getTotalAmounts().call(
+        tmp = self._contract.functions.getTotalAmounts().call(
             block_identifier=self.block
         )
         return {
@@ -186,56 +173,52 @@ class gamma_hypervisor(erc20):
         }
 
     @property
-    async def limitLower(self) -> int:
+    def limitLower(self) -> int:
         """limitLower _summary_
 
         Returns:
             int: 0 int24
         """
-        return await self._contract.functions.limitLower().call(
-            block_identifier=self.block
-        )
+        return self._contract.functions.limitLower().call(block_identifier=self.block)
 
     @property
-    async def limitUpper(self) -> int:
+    def limitUpper(self) -> int:
         """limitUpper _summary_
 
         Returns:
             int: 0 int24
         """
-        return await self._contract.functions.limitUpper().call(
-            block_identifier=self.block
-        )
+        return self._contract.functions.limitUpper().call(block_identifier=self.block)
 
     @property
-    async def maxTotalSupply(self) -> int:
+    def maxTotalSupply(self) -> int:
         """maxTotalSupply _summary_
 
         Returns:
             int: 0 uint256
         """
-        return await self._contract.functions.maxTotalSupply().call(
+        return self._contract.functions.maxTotalSupply().call(
             block_identifier=self.block
         )
 
     @property
-    async def name(self) -> str:
-        return await self._contract.functions.name().call(block_identifier=self.block)
+    def name(self) -> str:
+        return self._contract.functions.name().call(block_identifier=self.block)
 
-    async def nonces(self, owner: str):
-        return await self._contract.functions.nonces()(
-            Web3.to_checksum_address(owner)
-        ).call(block_identifier=self.block)
-
-    @property
-    async def owner(self) -> str:
-        return await self._contract.functions.owner().call(block_identifier=self.block)
+    def nonces(self, owner: str):
+        return self._contract.functions.nonces()(Web3.to_checksum_address(owner)).call(
+            block_identifier=self.block
+        )
 
     @property
-    async def pool(self) -> univ3_pool:
+    def owner(self) -> str:
+        return self._contract.functions.owner().call(block_identifier=self.block)
+
+    @property
+    def pool(self) -> univ3_pool:
         if self._pool is None:
             self._pool = univ3_pool(
-                address=await self._contract.functions.pool().call(
+                address=self._contract.functions.pool().call(
                     block_identifier=self.block
                 ),
                 network=self._network,
@@ -245,21 +228,19 @@ class gamma_hypervisor(erc20):
         return self._pool
 
     @property
-    async def tickSpacing(self) -> int:
+    def tickSpacing(self) -> int:
         """tickSpacing _summary_
 
         Returns:
             int: 60 int24
         """
-        return await self._contract.functions.tickSpacing().call(
-            block_identifier=self.block
-        )
+        return self._contract.functions.tickSpacing().call(block_identifier=self.block)
 
     @property
-    async def token0(self) -> erc20:
+    def token0(self) -> erc20:
         if self._token0 is None:
             self._token0 = erc20(
-                address=await self._contract.functions.token0().call(
+                address=self._contract.functions.token0().call(
                     block_identifier=self.block
                 ),
                 network=self._network,
@@ -269,10 +250,10 @@ class gamma_hypervisor(erc20):
         return self._token0
 
     @property
-    async def token1(self) -> erc20:
+    def token1(self) -> erc20:
         if self._token1 is None:
             self._token1 = erc20(
-                address=await self._contract.functions.token1().call(
+                address=self._contract.functions.token1().call(
                     block_identifier=self.block
                 ),
                 network=self._network,
@@ -301,7 +282,7 @@ class gamma_hypervisor(erc20):
         #     if issubclass(event, TransactionEvent) # only get transaction events
         # ]
 
-    async def get_qtty_depoloyed(self, inDecimal: bool = True) -> dict:
+    def get_qtty_depoloyed(self, inDecimal: bool = True) -> dict:
         """Retrieve the quantity of tokens currently deployed
 
         Returns:
@@ -313,26 +294,23 @@ class gamma_hypervisor(erc20):
                  }
         """
         # positions
-
-        base, limit = await asyncio.gather(
-            self.pool.get_qtty_depoloyed(
-                ownerAddress=self.address,
-                tickUpper=self.baseUpper,
-                tickLower=self.baseLower,
-                inDecimal=inDecimal,
-            ),
-            self.pool.get_qtty_depoloyed(
-                ownerAddress=self.address,
-                tickUpper=self.limitUpper,
-                tickLower=self.limitLower,
-                inDecimal=inDecimal,
-            ),
+        base = self.pool.get_qtty_depoloyed(
+            ownerAddress=self.address,
+            tickUpper=self.baseUpper,
+            tickLower=self.baseLower,
+            inDecimal=inDecimal,
+        )
+        limit = self.pool.get_qtty_depoloyed(
+            ownerAddress=self.address,
+            tickUpper=self.limitUpper,
+            tickLower=self.limitLower,
+            inDecimal=inDecimal,
         )
 
         # add up
         return {k: base.get(k, 0) + limit.get(k, 0) for k in set(base) & set(limit)}
 
-    async def get_fees_uncollected(self, inDecimal: bool = True) -> dict:
+    def get_fees_uncollected(self, inDecimal: bool = True) -> dict:
         """Retrieve the quantity of fees not collected nor yet owed ( but certain) to the deployed position
 
         Returns:
@@ -342,24 +320,22 @@ class gamma_hypervisor(erc20):
                 }
         """
         # positions
-        base, limit = await asyncio.gather(
-            self.pool.get_fees_uncollected(
-                ownerAddress=self.address,
-                tickUpper=self.baseUpper,
-                tickLower=self.baseLower,
-                inDecimal=inDecimal,
-            ),
-            self.pool.get_fees_uncollected(
-                ownerAddress=self.address,
-                tickUpper=self.limitUpper,
-                tickLower=self.limitLower,
-                inDecimal=inDecimal,
-            ),
+        base = self.pool.get_fees_uncollected(
+            ownerAddress=self.address,
+            tickUpper=self.baseUpper,
+            tickLower=self.baseLower,
+            inDecimal=inDecimal,
+        )
+        limit = self.pool.get_fees_uncollected(
+            ownerAddress=self.address,
+            tickUpper=self.limitUpper,
+            tickLower=self.limitLower,
+            inDecimal=inDecimal,
         )
 
         return {k: base.get(k, 0) + limit.get(k, 0) for k in set(base) & set(limit)}
 
-    async def get_tvl(self, inDecimal=True) -> dict:
+    def get_tvl(self, inDecimal=True) -> dict:
         """get total value locked of both positions
            TVL = deployed + parked + owed
 
@@ -374,30 +350,17 @@ class gamma_hypervisor(erc20):
                    "parked_token1": ,   (int or Decimal)
                    }
         """
-        result = {}
-
         # get deployed fees as int ( force no decimals)
-        (
-            deployed,
-            result["parked_token0"],
-            result["parked_token1"],
-            result["deployed_token0"],
-            result["deployed_token1"],
-            result["fees_owed_token0"],
-            result["fees_owed_token1"],
-            token0_decimals,
-            token1_decimals,
-        ) = asyncio.gather(
-            self.get_qtty_depoloyed(inDecimal=False),
-            self.pool.token0.balanceOf(await self.address),
-            self.pool.token1.balanceOf(await self.address),
-            deployed["qtty_token0"],
-            deployed["qtty_token1"],
-            deployed["fees_owed_token0"],
-            deployed["fees_owed_token1"],
-            self.token0.decimals,
-            self.token1.decimals,
-        )
+        deployed = self.get_qtty_depoloyed(inDecimal=False)
+
+        result = {"parked_token0": self.pool.token0.balanceOf(self.address)}
+
+        result["parked_token1"] = self.pool.token1.balanceOf(self.address)
+
+        result["deployed_token0"] = deployed["qtty_token0"]
+        result["deployed_token1"] = deployed["qtty_token1"]
+        result["fees_owed_token0"] = deployed["fees_owed_token0"]
+        result["fees_owed_token1"] = deployed["fees_owed_token1"]
 
         # sumup
         result["tvl_token0"] = (
@@ -415,15 +378,19 @@ class gamma_hypervisor(erc20):
             # convert to decimal
             for key in result:
                 if "token0" in key:
-                    result[key] = Decimal(result[key]) / Decimal(10**token0_decimals)
+                    result[key] = Decimal(result[key]) / Decimal(
+                        10**self.token0.decimals
+                    )
                 elif "token1" in key:
-                    result[key] = Decimal(result[key]) / Decimal(10**token1_decimals)
+                    result[key] = Decimal(result[key]) / Decimal(
+                        10**self.token1.decimals
+                    )
                 else:
                     raise ValueError(f"Cant convert '{key}' field to decimal")
 
         return result.copy()
 
-    async def as_dict(self, convert_bint=False, static_mode: bool = False) -> dict:
+    def as_dict(self, convert_bint=False, static_mode: bool = False) -> dict:
         """as_dict _summary_
 
         Args:
@@ -433,21 +400,7 @@ class gamma_hypervisor(erc20):
         Returns:
             dict:
         """
-        result = await super().as_dict(convert_bint=convert_bint)
-
-        (
-            result["name"],
-            result["pool"],
-            result["fee"],
-            result["deposit0Max"],
-            result["deposit1Max"],
-        ) = asyncio.gather(
-            self.name,
-            self.pool.as_dict(convert_bint=convert_bint, static_mode=static_mode),
-            self.fee,
-            self.deposit0Max,
-            self.deposit1Max,
-        )
+        result = super().as_dict(convert_bint=convert_bint)
 
         result["name"] = self.name
         result["pool"] = self.pool.as_dict(
@@ -468,10 +421,6 @@ class gamma_hypervisor(erc20):
         )
 
         # result["directDeposit"] = self.directDeposit  # not working
-
-        if convert_bint:
-            result["deposit0Max"] = str(result["deposit0Max"])
-            result["deposit1Max"] = str(result["deposit1Max"])
 
         # only return when static mode is off
         if not static_mode:

@@ -113,7 +113,7 @@ RPC_URLS = {
         "https://ethereum.publicnode.com",
     ],
     "polygon": [
-        "https://polygon-rpc.com/",
+        # "https://polygon-rpc.com/",
         "https://rpc-mainnet.matic.network",
         "https://matic-mainnet.chainstacklabs.com",
         "https://rpc-mainnet.maticvigil.com",

@@ -153,10 +153,17 @@ class web3_router_builder(router_builder_generalTemplate):
     ):
         return "Not implemented yet"
 
-    async def hypervisor_uncollected_fees(
+    async def hypervisor_collected_fees(
         self, hypervisor_address: str, response: Response
     ):
         return "Not implemented yet"
+
+    async def hypervisor_uncollected_fees(
+        self, hypervisor_address: str, response: Response
+    ):
+        return await hypervisors.hypervisor_uncollected_fees(
+            network=self.chain, dex=self.dex, hypervisor_address=hypervisor_address
+        )
 
     #    hypervisor analytics
 
