@@ -321,9 +321,23 @@ class subgraph_router_builder(router_builder_generalTemplate):
         )
 
     @cache(expire=APY_CACHE_TIMEOUT)
-    async def hypervisors_returns(self, response: Response):
+    async def hypervisors_returns(
+        self, response: Response, apr_type: str | None = None
+    ):
+        """fee's Apr and Apy
+
+        <apr_type> options are
+            'users': calculate Apr and Apy using only Liquidity provider fees
+            'gamma': calculate Apr and Apy using only Gamma fees
+            'all'  : calculate Apr and Apy using both Liquidity provider fees and Gamma fees
+
+        """
         hypervisor_returns = hypervisor.HypervisorsReturnsAllPeriods(
-            protocol=self.dex, chain=self.chain, hypervisors=None, response=response
+            protocol=self.dex,
+            chain=self.chain,
+            hypervisors=None,
+            apr_type=apr_type,
+            response=response,
         )
         return await hypervisor_returns.run(RUN_FIRST)
 

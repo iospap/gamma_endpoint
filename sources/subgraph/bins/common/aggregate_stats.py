@@ -32,7 +32,12 @@ class AggregateStats(ExecutionOrderWrapper):
         _mngr = db_aggregateStats_manager(mongo_url=MONGO_DB_URL)
         result = await _mngr.get_data(chain=self.chain, protocol=self.protocol)
         self.database_datetime = result.pop("datetime", "")
-        return result
+
+        return AggregateStatsOutput(
+            totalValueLockedUSD=result["totalValueLockedUSD"],
+            pairCount=result["paiCount"],
+            totalFeesClaimedUSD=result["totalFeesClaimedUSD"],
+        )
 
     async def _subgraph(self):
         top_level = TopLevelData(self.protocol, self.chain)

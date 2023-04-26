@@ -20,7 +20,20 @@ class FeesYield:
         self.protocol = protocol
         self.chain = chain
 
-    def calculate_returns(self) -> FeeYield:
+    def calculate_returns(self, apr_type: str | None = None) -> FeeYield:
+        """Calculate APR and APY for fees
+
+        Args:
+            apr_type (str, optional): users:  use Liquiditiy Provider fees to calculate feeApr,
+                                     gamma:  use Gamma's fees to calculate feeApr,
+                                     all:    use totalFees ( lp's+gammas) to calculate feeApr
+
+        Returns:
+            FeeYield:
+        """
+        # default apr typeis Liquidity Providers feeApr (users)
+        apr_type = apr_type or "users"
+
         snapshots = [self.get_fees(entry) for entry in self.data]
         df_snapshots = DataFrame(snapshots, dtype=np.float64)
 
@@ -44,8 +57,17 @@ class FeesYield:
         df_snapshots["lp_fee_1"] = df_snapshots.total_fees_1 - df_snapshots.gamma_fee_1
 
         df_snapshots["elapsed_time"] = df_snapshots.timestamp.diff()
-        df_snapshots["fee0_growth"] = df_snapshots.lp_fee_0.diff().clip(lower=0)
-        df_snapshots["fee1_growth"] = df_snapshots.lp_fee_1.diff().clip(lower=0)
+
+        # Choose fee growth based on aprType
+        if apr_type == "users":
+            df_snapshots["fee0_growth"] = df_snapshots.lp_fee_0.diff().clip(lower=0)
+            df_snapshots["fee1_growth"] = df_snapshots.lp_fee_1.diff().clip(lower=0)
+        elif apr_type == "gamma":
+            df_snapshots["fee0_growth"] = df_snapshots.gamma_fee_0.diff().clip(lower=0)
+            df_snapshots["fee1_growth"] = df_snapshots.gamma_fee_1.diff().clip(lower=0)
+        elif apr_type == "all":
+            df_snapshots["fee0_growth"] = df_snapshots.total_fees_0.diff().clip(lower=0)
+            df_snapshots["fee1_growth"] = df_snapshots.total_fees_1.diff().clip(lower=0)
 
         df_snapshots["fee_growth_usd"] = (
             df_snapshots.fee0_growth * df_snapshots.price_0
@@ -122,6 +144,7 @@ async def fee_returns_all(
     days: int,
     hypervisors: list[str] | None = None,
     current_timestamp: int | None = None,
+    apr_type: str | None = None,
 ) -> dict[str, dict]:
     fees_data = FeeGrowthSnapshotData(protocol, chain)
     await fees_data.init_time(days_ago=days, end_timestamp=current_timestamp)
@@ -130,7 +153,12 @@ async def fee_returns_all(
     results = {}
     for hypervisor_id, fees_data in fees_data.data.items():
         fees_yield = FeesYield(fees_data, protocol, chain)
-        returns = fees_yield.calculate_returns()
+
+        returns = (
+            fees_yield.calculate_returns(aprType=apr_type)
+            if apr_type
+            else fees_yield.calculate_returns()
+        )
         results[hypervisor_id] = {
             "symbol": fees_data[0].symbol,
             "feeApr": returns.apr,
