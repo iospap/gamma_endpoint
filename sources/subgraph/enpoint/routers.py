@@ -327,9 +327,9 @@ class subgraph_router_builder(router_builder_generalTemplate):
         """fee's Apr and Apy
 
         <apr_type> options are
-            'users': calculate Apr and Apy using only Liquidity provider fees
-            'gamma': calculate Apr and Apy using only Gamma fees
-            'all'  : calculate Apr and Apy using both Liquidity provider fees and Gamma fees
+          - **'users'**: calculate Apr and Apy using only Liquidity provider fees
+          - **'gamma'**: calculate Apr and Apy using only Gamma fees
+          - **'all'**  : calculate Apr and Apy using both Liquidity provider fees and Gamma fees
 
         """
         hypervisor_returns = hypervisor.HypervisorsReturnsAllPeriods(
