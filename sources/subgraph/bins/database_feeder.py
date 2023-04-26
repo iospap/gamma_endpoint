@@ -20,7 +20,7 @@ from sources.subgraph.bins.config import (
     EXCLUDED_HYPERVISORS,
 )
 
-from sources.common.database.collection_endpoint import (
+from sources.subgraph.bins.database.managers import (
     db_returns_manager,
     db_static_manager,
     db_allData_manager,

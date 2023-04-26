@@ -1,12 +1,11 @@
 from fastapi import FastAPI
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.inmemory import InMemoryBackend
-from fastapi_cache.decorator import cache
 
 from fastapi.middleware.cors import CORSMiddleware
 from endpoint.config.cache import CHARTS_CACHE_TIMEOUT
 
-from sources.subgraph.enpoint.routers import build_routes, build_routes_compatible
+from sources.subgraph.enpoint.routers import build_routers, build_routers_compatible
 
 
 def create_app(
@@ -22,7 +21,7 @@ def create_app(
 
     # Add subgraph routes to app
     for route_builder in (
-        build_routes() if not backwards_compatible else build_routes_compatible()
+        build_routers() if not backwards_compatible else build_routers_compatible()
     ):
         app.include_router(route_builder.router(), tags=route_builder.tags)
 

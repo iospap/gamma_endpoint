@@ -11,7 +11,7 @@ from endpoint.config.cache import (
 )
 
 
-class endpoint_builder_baseTemplate:
+class router_builder_baseTemplate:
     def __init__(self, tags: list, prefix: str = ""):
         self.tags = tags
         self.prefix = prefix.removesuffix("/")
@@ -21,7 +21,7 @@ class endpoint_builder_baseTemplate:
         return None
 
 
-class endpoint_builder_template(endpoint_builder_baseTemplate):
+class router_builder_generalTemplate(router_builder_baseTemplate):
     def __init__(
         self, dex: str, chain: str, tags: list | None = None, prefix: str = ""
     ):
@@ -31,9 +31,10 @@ class endpoint_builder_template(endpoint_builder_baseTemplate):
         self.chain = chain
         # set tags if not supplied
         self.tags = self.tags or [f"{chain} - {dex}"]
+        self.name = type(self).__name__
 
     def generate_unique_id(self, route: "APIRoute") -> str:
-        operation_id = f"{self.tags}_{route.name + route.path_format}"
+        operation_id = f"{self.name}_{self.tags}_{route.name + route.path_format}"
         operation_id = re.sub(r"\W", "_", operation_id)
         assert route.methods
         operation_id = operation_id + "_" + list(route.methods)[0].lower()
@@ -102,7 +103,7 @@ class endpoint_builder_template(endpoint_builder_baseTemplate):
             methods=["GET"],
             generate_unique_id_function=self.generate_unique_id,
         )
-
+        
         return router
 
     def _create_routes_hypervisor_analytics(

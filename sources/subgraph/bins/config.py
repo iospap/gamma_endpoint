@@ -106,12 +106,6 @@ XGAMMA_SUBGRAPH_URL = "https://api.thegraph.com/subgraphs/name/l0c4t0r/xgamma"
 
 DEFAULT_TIMEZONE = get_config("TIMEZONE")
 
-# CHARTS_CACHE_TIMEOUT = int(get_config("CHARTS_CACHE_TIMEOUT"))
-# APY_CACHE_TIMEOUT = int(get_config("APY_CACHE_TIMEOUT"))
-# DASHBOARD_CACHE_TIMEOUT = int(get_config("DASHBOARD_CACHE_TIMEOUT"))
-# ALLDATA_CACHE_TIMEOUT = int(get_config("ALLDATA_CACHE_TIMEOUT"))
-# DB_CACHE_TIMEOUT = int(get_config("DB_CACHE_TIMEOUT"))  # database calls cache
-
 EXCLUDED_HYPERVISORS = list(filter(None, get_config("EXCLUDED_HYPES").split(",")))
 
 legacy_stats = {
@@ -149,3 +143,5 @@ GQL_CLIENT_TIMEOUT = int(get_config("GQL_CLIENT_TIMEOUT"))
 
 # What to run first, subgraph or database
 RUN_FIRST_QUERY_TYPE = QueryType(get_config("RUN_FIRST_QUERY_TYPE"))
+
+MASTERCHEF_ADDRESSES = get_config("MASTERCHEF_ADDRESSES")

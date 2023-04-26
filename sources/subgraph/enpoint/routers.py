@@ -3,8 +3,8 @@ from fastapi import Response, APIRouter, status
 from fastapi_cache.decorator import cache
 
 from endpoint.routers.template import (
-    endpoint_builder_template,
-    endpoint_builder_baseTemplate,
+    router_builder_generalTemplate,
+    router_builder_baseTemplate,
 )
 from sources.subgraph.bins.common import (
     hypervisor,
@@ -37,17 +37,22 @@ from endpoint.config.cache import (
 RUN_FIRST = RUN_FIRST_QUERY_TYPE
 
 
-def build_routes() -> list:
+# Route builders
+
+
+def build_routers() -> list:
     routes = []
 
     # all-deployments
     routes.append(
-        subgraph_allDeployments(tags=["All Deployments"], prefix="/allDeployments")
+        subgraph_router_builder_allDeployments(
+            tags=["All Deployments"], prefix="/allDeployments"
+        )
     )
 
     # setup dex + chain endpoints
     routes.append(
-        subgraph_endpoint(
+        subgraph_router_builder(
             dex=Protocol.UNISWAP,
             chain=Chain.MAINNET,
             tags=["Uniswap - Ethereum"],
@@ -55,7 +60,7 @@ def build_routes() -> list:
         )
     )
     routes.append(
-        subgraph_endpoint(
+        subgraph_router_builder(
             dex=Protocol.UNISWAP,
             chain=Chain.POLYGON,
             tags=["Uniswap - Polygon"],
@@ -63,7 +68,7 @@ def build_routes() -> list:
         )
     )
     routes.append(
-        subgraph_endpoint(
+        subgraph_router_builder(
             dex=Protocol.UNISWAP,
             chain=Chain.ARBITRUM,
             tags=["Uniswap - Arbitrum"],
@@ -71,7 +76,7 @@ def build_routes() -> list:
         )
     )
     routes.append(
-        subgraph_endpoint(
+        subgraph_router_builder(
             dex=Protocol.UNISWAP,
             chain=Chain.OPTIMISM,
             tags=["Uniswap - Optimism"],
@@ -79,7 +84,7 @@ def build_routes() -> list:
         )
     )
     routes.append(
-        subgraph_endpoint(
+        subgraph_router_builder(
             dex=Protocol.UNISWAP,
             chain=Chain.CELO,
             tags=["Uniswap - Celo"],
@@ -87,7 +92,7 @@ def build_routes() -> list:
         )
     )
     routes.append(
-        subgraph_endpoint(
+        subgraph_router_builder(
             dex=Protocol.UNISWAP,
             chain=Chain.BSC,
             tags=["Uniswap - Binance"],
@@ -95,7 +100,7 @@ def build_routes() -> list:
         )
     )
     routes.append(
-        subgraph_endpoint(
+        subgraph_router_builder(
             dex=Protocol.QUICKSWAP,
             chain=Chain.POLYGON,
             tags=["Quickswap - Polygon"],
@@ -103,7 +108,7 @@ def build_routes() -> list:
         )
     )
     routes.append(
-        subgraph_endpoint(
+        subgraph_router_builder(
             dex=Protocol.ZYBERSWAP,
             chain=Chain.ARBITRUM,
             tags=["Zyberswap - Arbitrum"],
@@ -111,7 +116,7 @@ def build_routes() -> list:
         )
     )
     routes.append(
-        subgraph_endpoint(
+        subgraph_router_builder(
             dex=Protocol.THENA,
             chain=Chain.BSC,
             tags=["Thena - BSC"],
@@ -120,15 +125,17 @@ def build_routes() -> list:
     )
 
     # Simulation
-    routes.append(router_builder_Simulator(tags=["Simulator"], prefix="/simulator"))
+    routes.append(
+        subgraph_router_builder_Simulator(tags=["Simulator"], prefix="/simulator")
+    )
 
     # Charts
-    routes.append(router_builder_Charts(tags=["Charts"], prefix="/charts"))
+    routes.append(subgraph_router_builder_Charts(tags=["Charts"], prefix="/charts"))
 
     return routes
 
 
-def build_routes_compatible() -> list:
+def build_routers_compatible() -> list:
     """Build backwards compatible routes for the old endpoint
 
     Returns:
@@ -138,19 +145,21 @@ def build_routes_compatible() -> list:
 
     # all-deployments
     routes.append(
-        subgraph_allDeployments(tags=["All Deployments"], prefix="/allDeployments")
+        subgraph_router_builder_allDeployments(
+            tags=["All Deployments"], prefix="/allDeployments"
+        )
     )
 
     # add Mainnet
     routes.append(
-        subgraph_endpoint_compatible(
+        subgraph_router_builder_compatible(
             dex=Protocol.UNISWAP,
             chain=Chain.MAINNET,
             tags=["Mainnet"],
         )
     )
     routes.append(
-        subgraph_endpoint(
+        subgraph_router_builder(
             dex=Protocol.UNISWAP,
             chain=Chain.POLYGON,
             tags=["Polygon"],
@@ -158,7 +167,7 @@ def build_routes_compatible() -> list:
         )
     )
     routes.append(
-        subgraph_endpoint(
+        subgraph_router_builder(
             dex=Protocol.UNISWAP,
             chain=Chain.ARBITRUM,
             tags=["Arbitrum"],
@@ -166,7 +175,7 @@ def build_routes_compatible() -> list:
         )
     )
     routes.append(
-        subgraph_endpoint(
+        subgraph_router_builder(
             dex=Protocol.UNISWAP,
             chain=Chain.OPTIMISM,
             tags=["Optimism"],
@@ -174,7 +183,7 @@ def build_routes_compatible() -> list:
         )
     )
     routes.append(
-        subgraph_endpoint(
+        subgraph_router_builder(
             dex=Protocol.UNISWAP,
             chain=Chain.CELO,
             tags=["Celo"],
@@ -182,7 +191,7 @@ def build_routes_compatible() -> list:
         )
     )
     routes.append(
-        subgraph_endpoint(
+        subgraph_router_builder(
             dex=Protocol.UNISWAP,
             chain=Chain.BSC,
             tags=["BSC"],
@@ -190,7 +199,7 @@ def build_routes_compatible() -> list:
         )
     )
     routes.append(
-        subgraph_endpoint(
+        subgraph_router_builder(
             dex=Protocol.QUICKSWAP,
             chain=Chain.POLYGON,
             tags=["Quickswap - Polygon"],
@@ -198,7 +207,7 @@ def build_routes_compatible() -> list:
         )
     )
     routes.append(
-        subgraph_endpoint(
+        subgraph_router_builder(
             dex=Protocol.ZYBERSWAP,
             chain=Chain.ARBITRUM,
             tags=["Zyberswap - Arbitrum"],
@@ -206,7 +215,7 @@ def build_routes_compatible() -> list:
         )
     )
     routes.append(
-        subgraph_endpoint(
+        subgraph_router_builder(
             dex=Protocol.THENA,
             chain=Chain.BSC,
             tags=["Thena - BSC"],
@@ -215,14 +224,19 @@ def build_routes_compatible() -> list:
     )
 
     # Simulation
-    routes.append(router_builder_Simulator(tags=["Simulator"], prefix="/simulator"))
+    routes.append(
+        subgraph_router_builder_Simulator(tags=["Simulator"], prefix="/simulator")
+    )
 
-    routes.append(router_builder_Charts(tags=["Charts"], prefix="/charts"))
+    routes.append(subgraph_router_builder_Charts(tags=["Charts"], prefix="/charts"))
 
     return routes
 
 
-class subgraph_endpoint(endpoint_builder_template):
+# Route underlying functions
+
+
+class subgraph_router_builder(router_builder_generalTemplate):
     # EXECUTION FUNCTIONS
 
     async def hypervisor_basic_stats(self, hypervisor_address: str, response: Response):
@@ -430,7 +444,7 @@ class subgraph_endpoint(endpoint_builder_template):
         )
 
 
-class subgraph_endpoint_compatible(subgraph_endpoint):
+class subgraph_router_builder_compatible(subgraph_router_builder):
     def _create_routes(self, dex, chain) -> APIRouter:
         """Create routes for the given chain and dex combination."""
 
@@ -513,7 +527,7 @@ class subgraph_endpoint_compatible(subgraph_endpoint):
         return await token_distributions.output(days)
 
 
-class subgraph_allDeployments(endpoint_builder_baseTemplate):
+class subgraph_router_builder_allDeployments(router_builder_baseTemplate):
     # ROUTEs BUILD FUNCTIONS
     def router(self) -> APIRouter:
         router = APIRouter(prefix=self.prefix)
@@ -592,7 +606,7 @@ class subgraph_allDeployments(endpoint_builder_baseTemplate):
         return await result.info("UTC")
 
 
-class router_builder_Simulator(endpoint_builder_baseTemplate):
+class subgraph_router_builder_Simulator(router_builder_baseTemplate):
     # ROUTEs BUILD FUNCTIONS
     def router(self) -> APIRouter:
         router = APIRouter(prefix=self.prefix)
@@ -647,7 +661,7 @@ class router_builder_Simulator(endpoint_builder_baseTemplate):
         return volume
 
 
-class router_builder_Charts(endpoint_builder_baseTemplate):
+class subgraph_router_builder_Charts(router_builder_baseTemplate):
     # ROUTEs BUILD FUNCTIONS
     def router(self) -> APIRouter:
         router = APIRouter(prefix=self.prefix)

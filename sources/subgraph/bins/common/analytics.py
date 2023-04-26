@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from fastapi import Response, status
 
 from sources.subgraph.bins.enums import Chain, Protocol
-from sources.common.database.collection_endpoint import (
+from sources.subgraph.bins.database.managers import (
     db_returns_manager,
     db_allRewards2_manager,
 )

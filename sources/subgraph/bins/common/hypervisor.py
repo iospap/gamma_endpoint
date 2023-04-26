@@ -4,7 +4,7 @@ import logging
 
 from fastapi import Response, status
 
-from sources.common.database.collection_endpoint import (
+from sources.subgraph.bins.database.managers import (
     db_allData_manager,
     db_returns_manager,
 )
