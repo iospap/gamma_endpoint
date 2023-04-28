@@ -22,6 +22,7 @@ class gamma_hypervisor(erc20):
         abi_filename: str = "",
         abi_path: str = "",
         block: int = 0,
+        timestamp: int = 0,
         custom_web3: Web3 | None = None,
         custom_web3Url: str | None = None,
     ):
@@ -38,101 +39,147 @@ class gamma_hypervisor(erc20):
             abi_filename=self._abi_filename,
             abi_path=self._abi_path,
             block=block,
+            timestamp=timestamp,
             custom_web3=custom_web3,
             custom_web3Url=custom_web3Url,
         )
 
-    # PROPERTIES
-    @property
-    async def baseUpper(self) -> int:
+    # initializers
+
+    async def init_all(self):
+        """ini all the data for the object to be usable"""
+        to_call = [
+            self.init_baseLower(),
+            self.init_baseUpper(),
+            self.init_currentTick(),
+            self.init_fee(),
+            self.init_getBasePosition(),
+            self.init_getLimitPosition(),
+            self.init_getTotalAmounts(),
+            self.init_limitLower(),
+            self.init_limitUpper(),
+            self.init_name(),
+            self.init_pool(),
+            self.init_token0(),
+            self.init_token1(),
+            self.init_deposit0Max(),
+            self.init_deposit1Max(),
+            self.init_directDeposit(),
+            self.init_feeRecipient(),
+            self.init_maxTotalSupply(),
+            self.init_owner(),
+            self.init_tickSpacing(),
+        ]
+
+        # call in parallel
+        await asyncio.gather(*to_call)
+
+    async def init_min(self):
+        """init the minimum amount of data for the object to be usable"""
+        to_call = [
+            self.init_baseLower(),
+            self.init_baseUpper(),
+            self.init_currentTick(),
+            self.init_fee(),
+            self.init_getBasePosition(),
+            self.init_getLimitPosition(),
+            self.init_getTotalAmounts(),
+            self.init_limitLower(),
+            self.init_limitUpper(),
+            self.init_name(),
+            self.init_pool(),
+            self.init_token0(),
+            self.init_token1(),
+        ]
+
+        # call in parallel
+        await asyncio.gather(*to_call)
+
+    async def init_baseUpper(self):
         """baseUpper _summary_
 
         Returns:
             _type_: 0 int24
         """
-        return await self._contract.functions.baseUpper().call(
+        self._baseUpper = await self._contract.functions.baseUpper().call(
             block_identifier=self.block
         )
 
-    @property
-    async def baseLower(self) -> int:
+    async def init_baseLower(self):
         """baseLower _summary_
 
         Returns:
             _type_: 0 int24
         """
-        return await self._contract.functions.baseLower().call(
+        self._baseLower = await self._contract.functions.baseLower().call(
             block_identifier=self.block
         )
 
-    @property
-    async def currentTick(self) -> int:
+    async def init_currentTick(self):
         """currentTick _summary_
 
         Returns:
             int: -78627 int24
         """
-        return await self._contract.functions.currentTick().call(
+        self._currentTick = await self._contract.functions.currentTick().call(
             block_identifier=self.block
         )
 
-    @property
-    async def deposit0Max(self) -> int:
+    async def init_deposit0Max(self):
         """deposit0Max _summary_
 
         Returns:
             float: 1157920892373161954234007913129639935 uint256
         """
-        return await self._contract.functions.deposit0Max().call(
+        self._deposit0Max = await self._contract.functions.deposit0Max().call(
             block_identifier=self.block
         )
 
-    @property
-    async def deposit1Max(self) -> int:
+    async def init_deposit1Max(self):
         """deposit1Max _summary_
 
         Returns:
             int: 115792089237 uint256
         """
-        return await self._contract.functions.deposit1Max().call(
+        self._deposit1Max = await self._contract.functions.deposit1Max().call(
             block_identifier=self.block
         )
 
-    # v1 contracts have no directDeposit
-    @property
-    async def directDeposit(self) -> bool:
+    async def init_directDeposit(self):
         """v1 contracts have no directDeposit function
 
         Returns:
             bool:
         """
-        return await self._contract.functions.directDeposit().call(
+        self._directDeposit = await self._contract.functions.directDeposit().call(
             block_identifier=self.block
         )
 
-    @property
-    async def fee(self) -> int:
+    async def init_fee(self):
         """fee _summary_
 
         Returns:
             int: 10 uint8
         """
-        return await self._contract.functions.fee().call(block_identifier=self.block)
+        self._fee = await self._contract.functions.fee().call(
+            block_identifier=self.block
+        )
 
-    # v1 contracts have no feeRecipient
-    @property
-    async def feeRecipient(self) -> str:
+    async def init_feeRecipient(self):
         """v1 contracts have no feeRecipient function
 
         Returns:
             str: address
         """
-        return await self._contract.functions.feeRecipient().call(
-            block_identifier=self.block
-        )
+        try:
+            self._feeRecipient = await self._contract.functions.feeRecipient().call(
+                block_identifier=self.block
+            )
+        except Exception:
+            # v1 contracts have no feeRecipient function
+            self._feeRecipient = None
 
-    @property
-    async def getBasePosition(self) -> dict:
+    async def init_getBasePosition(self):
         """
         Returns:
            dict:   {
@@ -144,14 +191,13 @@ class gamma_hypervisor(erc20):
         tmp = await self._contract.functions.getBasePosition().call(
             block_identifier=self.block
         )
-        return {
+        self._getBasePosition = {
             "liquidity": tmp[0],
             "amount0": tmp[1],
             "amount1": tmp[2],
         }
 
-    @property
-    async def getLimitPosition(self) -> dict:
+    async def init_getLimitPosition(self):
         """
         Returns:
            dict:   {
@@ -163,14 +209,13 @@ class gamma_hypervisor(erc20):
         tmp = await self._contract.functions.getLimitPosition().call(
             block_identifier=self.block
         )
-        return {
+        self._getLimitPosition = {
             "liquidity": tmp[0],
             "amount0": tmp[1],
             "amount1": tmp[2],
         }
 
-    @property
-    async def getTotalAmounts(self) -> dict:
+    async def init_getTotalAmounts(self):
         """
 
         Returns:
@@ -180,106 +225,270 @@ class gamma_hypervisor(erc20):
         tmp = await self._contract.functions.getTotalAmounts().call(
             block_identifier=self.block
         )
-        return {
+        self._getTotalAmounts = {
             "total0": tmp[0],
             "total1": tmp[1],
         }
 
-    @property
-    async def limitLower(self) -> int:
+    async def init_limitLower(self):
         """limitLower _summary_
 
         Returns:
             int: 0 int24
         """
-        return await self._contract.functions.limitLower().call(
+        self._limitLower = await self._contract.functions.limitLower().call(
             block_identifier=self.block
         )
 
-    @property
-    async def limitUpper(self) -> int:
+    async def init_limitUpper(self):
         """limitUpper _summary_
 
         Returns:
             int: 0 int24
         """
-        return await self._contract.functions.limitUpper().call(
+        self._limitUpper = await self._contract.functions.limitUpper().call(
             block_identifier=self.block
         )
 
-    @property
-    async def maxTotalSupply(self) -> int:
+    async def init_maxTotalSupply(self):
         """maxTotalSupply _summary_
 
         Returns:
             int: 0 uint256
         """
-        return await self._contract.functions.maxTotalSupply().call(
+        self._maxTotalSupply = await self._contract.functions.maxTotalSupply().call(
             block_identifier=self.block
         )
 
-    @property
-    async def name(self) -> str:
-        return await self._contract.functions.name().call(block_identifier=self.block)
+    async def init_name(self):
+        self._name = await self._contract.functions.name().call(
+            block_identifier=self.block
+        )
 
-    async def nonces(self, owner: str):
-        return await self._contract.functions.nonces()(
-            Web3.to_checksum_address(owner)
-        ).call(block_identifier=self.block)
+    async def init_owner(self):
+        self._owner = await self._contract.functions.owner().call(
+            block_identifier=self.block
+        )
 
-    @property
-    async def owner(self) -> str:
-        return await self._contract.functions.owner().call(block_identifier=self.block)
+    async def init_pool(self, methods_list: list[callable] | list[str] | None = None):
+        self._pool_address = await self._contract.functions.pool().call(
+            block_identifier=self.block
+        )
+        self._pool = univ3_pool(
+            address=self._pool_address,
+            network=self._network,
+            block=self.block,
+            custom_web3Url=self.w3.provider.endpoint_uri,
+        )
 
-    @property
-    async def pool(self) -> univ3_pool:
-        if self._pool is None:
-            self._pool = univ3_pool(
-                address=await self._contract.functions.pool().call(
-                    block_identifier=self.block
-                ),
-                network=self._network,
-                block=self.block,
-                custom_web3Url=self.w3.provider.endpoint_uri,
-            )
-        return self._pool
+        # init
+        await self._pool.init(methods_list=methods_list)
 
-    @property
-    async def tickSpacing(self) -> int:
+    async def init_tickSpacing(self):
         """tickSpacing _summary_
 
         Returns:
             int: 60 int24
         """
-        return await self._contract.functions.tickSpacing().call(
+        self._tickSpacing = await self._contract.functions.tickSpacing().call(
             block_identifier=self.block
         )
 
+    async def init_token0(self, methods_list: list[callable] | list[str] | None = None):
+        self._token0_address = await self._contract.functions.token0().call(
+            block_identifier=self.block
+        )
+        self._token0 = erc20(
+            address=self._token0_address,
+            network=self._network,
+            block=self.block,
+            custom_web3Url=self.w3.provider.endpoint_uri,
+        )
+        # init
+        await self._token0.init(methods_list=methods_list)
+
+    async def init_token1(self, methods_list: list[callable] | list[str] | None = None):
+        self._token1_address = await self._contract.functions.token1().call(
+            block_identifier=self.block
+        )
+        self._token1 = erc20(
+            address=self._token1_address,
+            network=self._network,
+            block=self.block,
+            custom_web3Url=self.w3.provider.endpoint_uri,
+        )
+        # init
+        await self._token1.init(methods_list=methods_list)
+
+    # PROPERTIES
     @property
-    async def token0(self) -> erc20:
-        if self._token0 is None:
-            self._token0 = erc20(
-                address=await self._contract.functions.token0().call(
-                    block_identifier=self.block
-                ),
-                network=self._network,
-                block=self.block,
-                custom_web3Url=self.w3.provider.endpoint_uri,
-            )
+    def baseUpper(self) -> int:
+        """baseUpper _summary_
+
+        Returns:
+            _type_: 0 int24
+        """
+        return self._baseUpper
+
+    @property
+    def baseLower(self) -> int:
+        """baseLower _summary_
+
+        Returns:
+            _type_: 0 int24
+        """
+        return self._baseLower
+
+    @property
+    def currentTick(self) -> int:
+        """currentTick _summary_
+
+        Returns:
+            int: -78627 int24
+        """
+        return self._currentTick
+
+    @property
+    def deposit0Max(self) -> int:
+        """deposit0Max _summary_
+
+        Returns:
+            float: 1157920892373161954234007913129639935 uint256
+        """
+        return self._deposit0Max
+
+    @property
+    def deposit1Max(self) -> int:
+        """deposit1Max _summary_
+
+        Returns:
+            int: 115792089237 uint256
+        """
+        return self._deposit1Max
+
+    # v1 contracts have no directDeposit
+    @property
+    def directDeposit(self) -> bool:
+        """v1 contracts have no directDeposit function
+
+        Returns:
+            bool:
+        """
+        return self._directDeposit
+
+    @property
+    def fee(self) -> int:
+        """fee _summary_
+
+        Returns:
+            int: 10 uint8
+        """
+        return self._fee
+
+    # v1 contracts have no feeRecipient
+    @property
+    def feeRecipient(self) -> str:
+        """v1 contracts have no feeRecipient function
+
+        Returns:
+            str: address
+        """
+        return self._feeRecipient
+
+    @property
+    def getBasePosition(self) -> dict:
+        """
+        Returns:
+           dict:   {
+               liquidity   287141300490401993 uint128
+               amount0     72329994  uint256
+               amount1     565062023318300677907  uint256
+               }
+        """
+        return self._getBasePosition
+
+    @property
+    def getLimitPosition(self) -> dict:
+        """
+        Returns:
+           dict:   {
+               liquidity   287141300490401993 uint128
+               amount0     72329994 uint256
+               amount1     565062023318300677907 uint256
+               }
+        """
+        return self._getLimitPosition
+
+    @property
+    def getTotalAmounts(self) -> dict:
+        """
+
+        Returns:
+           _type_: total0   2902086313 uint256
+                   total1  565062023318300678136 uint256
+        """
+        return self._getTotalAmounts
+
+    @property
+    def limitLower(self) -> int:
+        """limitLower _summary_
+
+        Returns:
+            int: 0 int24
+        """
+        return self._limitLower
+
+    @property
+    def limitUpper(self) -> int:
+        """limitUpper _summary_
+
+        Returns:
+            int: 0 int24
+        """
+        return self._limitUpper
+
+    @property
+    def maxTotalSupply(self) -> int:
+        """maxTotalSupply _summary_
+
+        Returns:
+            int: 0 uint256
+        """
+        return self._maxTotalSupply
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def owner(self) -> str:
+        return self._owner
+
+    @property
+    def pool(self) -> univ3_pool:
+        return self._pool
+
+    @property
+    def tickSpacing(self) -> int:
+        """tickSpacing _summary_
+
+        Returns:
+            int: 60 int24
+        """
+        return self._tickSpacing
+
+    @property
+    def token0(self) -> erc20:
         return self._token0
 
     @property
-    async def token1(self) -> erc20:
-        if self._token1 is None:
-            self._token1 = erc20(
-                address=await self._contract.functions.token1().call(
-                    block_identifier=self.block
-                ),
-                network=self._network,
-                block=self.block,
-                custom_web3Url=self.w3.provider.endpoint_uri,
-            )
+    def token1(self) -> erc20:
         return self._token1
+
+    async def nonces(self, owner: str):
+        return await self._contract.functions.nonces()(
+            Web3.to_checksum_address(owner)
+        ).call(block_identifier=self.block)
 
     @property
     def block(self) -> int:
@@ -288,9 +497,26 @@ class gamma_hypervisor(erc20):
     @block.setter
     def block(self, value):
         self._block = value
-        self.pool.block = value
-        self.token0.block = value
-        self.token1.block = value
+        self._pool.block = value
+        self._token0.block = value
+        self._token0.block = value
+        # reset init control vars
+        self._init = False
+        self._token0._init = False
+        self._token1._init = False
+        self._pool._init = False
+
+    @property
+    def timestamp(self) -> int:
+        """ """
+        return self._timestamp
+
+    @timestamp.setter
+    def timestamp(self, value: int):
+        self._timestamp = value
+        self._token0.timestamp = value
+        self._token1.timestamp = value
+        self._pool.timestamp = value
 
     # CUSTOM FUNCTIONS
     def get_all_events(self):
@@ -381,23 +607,16 @@ class gamma_hypervisor(erc20):
             deployed,
             result["parked_token0"],
             result["parked_token1"],
-            result["deployed_token0"],
-            result["deployed_token1"],
-            result["fees_owed_token0"],
-            result["fees_owed_token1"],
-            token0_decimals,
-            token1_decimals,
-        ) = asyncio.gather(
+        ) = await asyncio.gather(
             self.get_qtty_depoloyed(inDecimal=False),
             self.pool.token0.balanceOf(await self.address),
             self.pool.token1.balanceOf(await self.address),
-            deployed["qtty_token0"],
-            deployed["qtty_token1"],
-            deployed["fees_owed_token0"],
-            deployed["fees_owed_token1"],
-            self.token0.decimals,
-            self.token1.decimals,
         )
+
+        result["deployed_token0"] = deployed["qtty_token0"]
+        result["deployed_token1"] = deployed["qtty_token1"]
+        result["fees_owed_token0"] = deployed["fees_owed_token0"]
+        result["fees_owed_token1"] = deployed["fees_owed_token1"]
 
         # sumup
         result["tvl_token0"] = (
@@ -415,9 +634,13 @@ class gamma_hypervisor(erc20):
             # convert to decimal
             for key in result:
                 if "token0" in key:
-                    result[key] = Decimal(result[key]) / Decimal(10**token0_decimals)
+                    result[key] = Decimal(result[key]) / Decimal(
+                        10**self._token0.decimals
+                    )
                 elif "token1" in key:
-                    result[key] = Decimal(result[key]) / Decimal(10**token1_decimals)
+                    result[key] = Decimal(result[key]) / Decimal(
+                        10**self._token1.decimals
+                    )
                 else:
                     raise ValueError(f"Cant convert '{key}' field to decimal")
 
@@ -435,37 +658,21 @@ class gamma_hypervisor(erc20):
         """
         result = await super().as_dict(convert_bint=convert_bint)
 
-        (
-            result["name"],
-            result["pool"],
-            result["fee"],
-            result["deposit0Max"],
-            result["deposit1Max"],
-        ) = asyncio.gather(
-            self.name,
-            self.pool.as_dict(convert_bint=convert_bint, static_mode=static_mode),
-            self.fee,
-            self.deposit0Max,
-            self.deposit1Max,
-        )
+        if not self._init:
+            await self.init()
 
         result["name"] = self.name
-        result["pool"] = self.pool.as_dict(
+
+        result["fee"] = self.fee
+        result["deposit0Max"] = self.deposit0Max
+        result["deposit1Max"] = self.deposit1Max
+
+        result["pool"] = await self.pool.as_dict(
             convert_bint=convert_bint, static_mode=static_mode
         )
 
-        result["fee"] = self.fee
-
         # identify hypervisor dex
         result["dex"] = self.identify_dex_name()
-
-        result["deposit0Max"] = (
-            str(self.deposit0Max) if convert_bint else self.deposit0Max
-        )
-
-        result["deposit1Max"] = (
-            str(self.deposit1Max) if convert_bint else self.deposit1Max
-        )
 
         # result["directDeposit"] = self.directDeposit  # not working
 
@@ -475,60 +682,55 @@ class gamma_hypervisor(erc20):
 
         # only return when static mode is off
         if not static_mode:
-            self._as_dict_not_static_items(convert_bint, result)
+            await self._as_dict_not_static_items(convert_bint, result)
         return result
 
-    def _as_dict_not_static_items(self, convert_bint, result):
-        result["baseLower"] = str(self.baseLower) if convert_bint else self.baseLower
-        result["baseUpper"] = str(self.baseUpper) if convert_bint else self.baseUpper
-        result["currentTick"] = (
-            str(self.currentTick) if convert_bint else self.currentTick
+    async def _as_dict_not_static_items(self, convert_bint, result):
+        result["baseLower"] = self.baseLower
+        result["baseUpper"] = self.baseUpper
+        result["currentTick"] = self.currentTick
+        result["limitLower"] = self.limitLower
+        result["limitUpper"] = self.limitUpper
+        result["maxTotalSupply"] = self.maxTotalSupply
+
+        (
+            result["tvl"],
+            result["qtty_depoloyed"],
+            result["fees_uncollected"],
+        ) = await asyncio.gather(
+            self.get_tvl(inDecimal=(not convert_bint)),
+            self.get_qtty_depoloyed(inDecimal=(not convert_bint)),
+            self.get_fees_uncollected(inDecimal=(not convert_bint)),
         )
-
-        result["limitLower"] = str(self.limitLower) if convert_bint else self.limitLower
-
-        result["limitUpper"] = str(self.limitUpper) if convert_bint else self.limitUpper
-
-        # getTotalAmounts
+        result["basePosition"] = self.getBasePosition
+        result["limitPosition"] = self.getLimitPosition
+        result["tickSpacing"] = self.tickSpacing
         result["totalAmounts"] = self.getTotalAmounts
+
         if convert_bint:
+            result["baseLower"] = str(result["baseLower"])
+            result["baseUpper"] = str(result["baseUpper"])
+            result["currentTick"] = str(result["currentTick"])
+            result["limitLower"] = str(result["limitLower"])
+            result["limitUpper"] = str(result["limitUpper"])
             result["totalAmounts"]["total0"] = str(result["totalAmounts"]["total0"])
             result["totalAmounts"]["total1"] = str(result["totalAmounts"]["total1"])
-
-        result["maxTotalSupply"] = (
-            str(self.maxTotalSupply) if convert_bint else self.maxTotalSupply
-        )
-
-        # TVL
-        result["tvl"] = self.get_tvl(inDecimal=(not convert_bint))
-        if convert_bint:
+            result["maxTotalSupply"] = str(result["maxTotalSupply"])
+            # tvl
             for k in result["tvl"].keys():
                 result["tvl"][k] = str(result["tvl"][k])
-
-        # Deployed
-        result["qtty_depoloyed"] = self.get_qtty_depoloyed(inDecimal=(not convert_bint))
-        if convert_bint:
+            # Deployed
             for k in result["qtty_depoloyed"].keys():
                 result["qtty_depoloyed"][k] = str(result["qtty_depoloyed"][k])
-
-        # uncollected fees
-        result["fees_uncollected"] = self.get_fees_uncollected(
-            inDecimal=(not convert_bint)
-        )
-        if convert_bint:
+            # uncollected fees
             for k in result["fees_uncollected"].keys():
                 result["fees_uncollected"][k] = str(result["fees_uncollected"][k])
 
-        # positions
-        result["basePosition"] = self.getBasePosition
-        if convert_bint:
+            # positions
             self._as_dict_convert_helper(result, "basePosition")
-        result["limitPosition"] = self.getLimitPosition
-        if convert_bint:
             self._as_dict_convert_helper(result, "limitPosition")
-        result["tickSpacing"] = (
-            str(self.tickSpacing) if convert_bint else self.tickSpacing
-        )
+
+            result["tickSpacing"] = str(result["tickSpacing"])
 
     def _as_dict_convert_helper(self, result, arg1):
         result[arg1]["liquidity"] = str(result[arg1]["liquidity"])
@@ -544,6 +746,7 @@ class gamma_hypervisor_algebra(gamma_hypervisor):
         abi_filename: str = "",
         abi_path: str = "",
         block: int = 0,
+        timestamp: int = 0,
         custom_web3: Web3 | None = None,
         custom_web3Url: str | None = None,
     ):
@@ -556,22 +759,26 @@ class gamma_hypervisor_algebra(gamma_hypervisor):
             abi_filename=self._abi_filename,
             abi_path=self._abi_path,
             block=block,
+            timestamp=timestamp,
             custom_web3=custom_web3,
             custom_web3Url=custom_web3Url,
         )
 
-    @property
-    def pool(self) -> algebrav3_pool:
-        if self._pool is None:
-            self._pool = algebrav3_pool(
-                address=self._contract.functions.pool().call(
-                    block_identifier=self.block
-                ),
-                network=self._network,
-                block=self.block,
-                custom_web3Url=self.w3.provider.endpoint_uri,
-            )
-        return self._pool
+    # initializers
+    async def init_pool(self, methods_list: list[callable] | list[str] | None = None):
+        self._pool_address = await self._contract.functions.pool().call(
+            block_identifier=self.block
+        )
+        self._pool = algebrav3_pool(
+            address=self._pool_address,
+            network=self._network,
+            block=self.block,
+            timestamp=self.timestamp,
+            custom_web3Url=self.w3.provider.endpoint_uri,
+        )
+
+        # init
+        await self._pool.init(methods_list=methods_list)
 
 
 class gamma_hypervisor_quickswap(gamma_hypervisor_algebra):
@@ -582,6 +789,7 @@ class gamma_hypervisor_quickswap(gamma_hypervisor_algebra):
         abi_filename: str = "",
         abi_path: str = "",
         block: int = 0,
+        timestamp: int = 0,
         custom_web3: Web3 | None = None,
         custom_web3Url: str | None = None,
     ):
@@ -594,6 +802,7 @@ class gamma_hypervisor_quickswap(gamma_hypervisor_algebra):
             abi_filename=self._abi_filename,
             abi_path=self._abi_path,
             block=block,
+            timestamp=timestamp,
             custom_web3=custom_web3,
             custom_web3Url=custom_web3Url,
         )
@@ -607,6 +816,7 @@ class gamma_hypervisor_zyberswap(gamma_hypervisor_algebra):
         abi_filename: str = "",
         abi_path: str = "",
         block: int = 0,
+        timestamp: int = 0,
         custom_web3: Web3 | None = None,
         custom_web3Url: str | None = None,
     ):
@@ -619,6 +829,7 @@ class gamma_hypervisor_zyberswap(gamma_hypervisor_algebra):
             abi_filename=self._abi_filename,
             abi_path=self._abi_path,
             block=block,
+            timestamp=timestamp,
             custom_web3=custom_web3,
             custom_web3Url=custom_web3Url,
         )
@@ -632,6 +843,7 @@ class gamma_hypervisor_thena(gamma_hypervisor_algebra):
         abi_filename: str = "",
         abi_path: str = "",
         block: int = 0,
+        timestamp: int = 0,
         custom_web3: Web3 | None = None,
         custom_web3Url: str | None = None,
     ):
@@ -644,25 +856,32 @@ class gamma_hypervisor_thena(gamma_hypervisor_algebra):
             abi_filename=self._abi_filename,
             abi_path=self._abi_path,
             block=block,
+            timestamp=timestamp,
             custom_web3=custom_web3,
             custom_web3Url=custom_web3Url,
         )
 
-    @property
-    def pool(self) -> algebrav3_pool:
-        if self._pool is None:
-            self._pool = algebrav3_pool(
-                address=self._contract.functions.pool().call(
-                    block_identifier=self.block
-                ),
-                network=self._network,
-                block=self.block,
-                abi_filename="albebrav3pool_thena",
-                custom_web3Url=self.w3.provider.endpoint_uri,
-            )
-        return self._pool
+    # initializers
+    async def init_pool(self, methods_list: list[callable] | list[str] | None = None):
+        self._pool_address = await self._contract.functions.pool().call(
+            block_identifier=self.block
+        )
+        self._pool = algebrav3_pool(
+            address=self._pool_address,
+            network=self._network,
+            block=self.block,
+            timestamp=self.timestamp,
+            abi_filename="albebrav3pool_thena",
+            custom_web3Url=self.w3.provider.endpoint_uri,
+        )
+
+        # init
+        await self._pool.init(methods_list=methods_list)
 
 
+#####################
+#### TODO :   ###############
+#################3
 # registries
 
 
@@ -675,6 +894,7 @@ class gamma_hypervisor_registry(web3wrap):
         abi_filename: str = "",
         abi_path: str = "",
         block: int = 0,
+        timestamp: int = 0,
         custom_web3: Web3 | None = None,
         custom_web3Url: str | None = None,
     ):
@@ -687,6 +907,7 @@ class gamma_hypervisor_registry(web3wrap):
             abi_filename=self._abi_filename,
             abi_path=self._abi_path,
             block=block,
+            timestamp=timestamp,
             custom_web3=custom_web3,
             custom_web3Url=custom_web3Url,
         )
@@ -705,15 +926,17 @@ class gamma_hypervisor_registry(web3wrap):
     }
 
     @property
-    def counter(self) -> int:
+    async def counter(self) -> int:
         """number of hypervisors indexed, initial being 0  and end the counter value
 
         Returns:
             int: positions of hypervisors in registry
         """
-        return self._contract.functions.counter().call(block_identifier=self.block)
+        return await self._contract.functions.counter().call(
+            block_identifier=self.block
+        )
 
-    def hypeByIndex(self, index: int) -> tuple[str, int]:
+    async def hypeByIndex(self, index: int) -> tuple[str, int]:
         """Retrieve hype address and index from registry
             When index is zero, hype address has been deleted so its no longer valid
 
@@ -723,35 +946,36 @@ class gamma_hypervisor_registry(web3wrap):
         Returns:
             tuple[str, int]: hype address and index
         """
-        return self._contract.functions.hypeByIndex(index).call(
+        return await self._contract.functions.hypeByIndex(index).call(
             block_identifier=self.block
         )
 
     @property
-    def owner(self) -> str:
-        return self._contract.functions.owner().call(block_identifier=self.block)
+    async def owner(self) -> str:
+        return await self._contract.functions.owner().call(block_identifier=self.block)
 
-    def registry(self, index: int) -> str:
-        return self._contract.functions.registry(index).call(
+    async def registry(self, index: int) -> str:
+        return await self._contract.functions.registry(index).call(
             block_identifier=self.block
         )
 
-    def registryMap(self, address: str) -> int:
-        return self._contract.functions.registryMap(
+    async def registryMap(self, address: str) -> int:
+        return await self._contract.functions.registryMap(
             Web3.to_checksum_address(address)
         ).call(block_identifier=self.block)
 
     # CUSTOM FUNCTIONS
-    def get_hypervisors_generator(self) -> gamma_hypervisor:
+    async def get_hypervisors_generator(self) -> list[gamma_hypervisor]:
         """Retrieve hypervisors from registry
 
         Returns:
            gamma_hypervisor
         """
-        total_qtty = self.counter + 1  # index positions ini=0 end=counter
+        hypes_list = []
+        total_qtty = await self.counter + 1  # index positions ini=0 end=counter
         for i in range(total_qtty):
             try:
-                hypervisor_id, idx = self.hypeByIndex(index=i)
+                hypervisor_id, idx = await self.hypeByIndex(index=i)
 
                 # filter blacklisted hypes
                 if idx == 0 or (
@@ -769,29 +993,31 @@ class gamma_hypervisor_registry(web3wrap):
                     block=self.block,
                 )
                 # check this is actually an hypervisor (erroneous addresses exist like "ethereum":{"0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"})
-                hypervisor.getTotalAmounts  # test func
+                await hypervisor.getTotalAmounts  # test func
 
                 # return correct hypervisor
-                yield hypervisor
+                hypes_list.append(hypervisor)
             except Exception:
                 logging.getLogger(__name__).warning(
                     f" Hypervisor registry returned the address {hypervisor_id} and may not be an hypervisor ( at web3 chain id: {self._chain_id} )"
                 )
 
-    def get_hypervisors_addresses(self) -> list[str]:
+        return hypes_list
+
+    async def get_hypervisors_addresses(self) -> list[str]:
         """Retrieve hypervisors all addresses from registry
 
         Returns:
            list of addresses
         """
 
-        total_qtty = self.counter + 1  # index positions ini=0 end=counter
+        total_qtty = await self.counter + 1  # index positions ini=0 end=counter
 
         result = []
         for i in range(total_qtty):
             # executiuon reverted:  arbitrum and mainnet have diff ways of indexing (+1 or 0)
             with contextlib.suppress(Exception):
-                hypervisor_id, idx = self.hypeByIndex(index=i)
+                hypervisor_id, idx = await self.hypeByIndex(index=i)
 
                 # filter erroneous and blacklisted hypes
                 if idx == 0 or (
@@ -807,6 +1033,11 @@ class gamma_hypervisor_registry(web3wrap):
         return result
 
 
+##########################################
+########################################################
+# TODO: async ####################################################################
+
+
 # rewarders
 class gamma_masterchef_rewarder(web3wrap):
     def __init__(
@@ -816,6 +1047,7 @@ class gamma_masterchef_rewarder(web3wrap):
         abi_filename: str = "",
         abi_path: str = "",
         block: int = 0,
+        timestamp: int = 0,
         custom_web3: Web3 | None = None,
         custom_web3Url: str | None = None,
     ):
@@ -828,6 +1060,7 @@ class gamma_masterchef_rewarder(web3wrap):
             abi_filename=self._abi_filename,
             abi_path=self._abi_path,
             block=block,
+            timestamp=timestamp,
             custom_web3=custom_web3,
             custom_web3Url=custom_web3Url,
         )
@@ -976,6 +1209,7 @@ class zyberswap_masterchef_rewarder(web3wrap):
         abi_filename: str = "",
         abi_path: str = "",
         block: int = 0,
+        timestamp: int = 0,
         custom_web3: Web3 | None = None,
         custom_web3Url: str | None = None,
     ):
@@ -988,6 +1222,7 @@ class zyberswap_masterchef_rewarder(web3wrap):
             abi_filename=self._abi_filename,
             abi_path=self._abi_path,
             block=block,
+            timestamp=timestamp,
             custom_web3=custom_web3,
             custom_web3Url=custom_web3Url,
         )
@@ -1147,6 +1382,7 @@ class gamma_masterchef_v1(web3wrap):
         abi_filename: str = "",
         abi_path: str = "",
         block: int = 0,
+        timestamp: int = 0,
         custom_web3: Web3 | None = None,
         custom_web3Url: str | None = None,
     ):
@@ -1159,6 +1395,7 @@ class gamma_masterchef_v1(web3wrap):
             abi_filename=self._abi_filename,
             abi_path=self._abi_path,
             block=block,
+            timestamp=timestamp,
             custom_web3=custom_web3,
             custom_web3Url=custom_web3Url,
         )
@@ -1249,6 +1486,7 @@ class gamma_masterchef_v2(web3wrap):
         abi_filename: str = "",
         abi_path: str = "",
         block: int = 0,
+        timestamp: int = 0,
         custom_web3: Web3 | None = None,
         custom_web3Url: str | None = None,
     ):
@@ -1261,6 +1499,7 @@ class gamma_masterchef_v2(web3wrap):
             abi_filename=self._abi_filename,
             abi_path=self._abi_path,
             block=block,
+            timestamp=timestamp,
             custom_web3=custom_web3,
             custom_web3Url=custom_web3Url,
         )
@@ -1422,6 +1661,7 @@ class zyberswap_masterchef_v1(web3wrap):
         abi_filename: str = "",
         abi_path: str = "",
         block: int = 0,
+        timestamp: int = 0,
         custom_web3: Web3 | None = None,
         custom_web3Url: str | None = None,
     ):
@@ -1434,6 +1674,7 @@ class zyberswap_masterchef_v1(web3wrap):
             abi_filename=self._abi_filename,
             abi_path=self._abi_path,
             block=block,
+            timestamp=timestamp,
             custom_web3=custom_web3,
             custom_web3Url=custom_web3Url,
         )
@@ -1721,6 +1962,7 @@ class gamma_masterchef_registry(web3wrap):
         abi_filename: str = "",
         abi_path: str = "",
         block: int = 0,
+        timestamp: int = 0,
         custom_web3: Web3 | None = None,
         custom_web3Url: str | None = None,
     ):
@@ -1733,6 +1975,7 @@ class gamma_masterchef_registry(web3wrap):
             abi_filename=self._abi_filename,
             abi_path=self._abi_path,
             block=block,
+            timestamp=timestamp,
             custom_web3=custom_web3,
             custom_web3Url=custom_web3Url,
         )
@@ -1850,6 +2093,7 @@ class thena_voter_v3(web3wrap):
         abi_filename: str = "",
         abi_path: str = "",
         block: int = 0,
+        timestamp: int = 0,
         custom_web3: Web3 | None = None,
         custom_web3Url: str | None = None,
     ):
@@ -1862,6 +2106,7 @@ class thena_voter_v3(web3wrap):
             abi_filename=self._abi_filename,
             abi_path=self._abi_path,
             block=block,
+            timestamp=timestamp,
             custom_web3=custom_web3,
             custom_web3Url=custom_web3Url,
         )
@@ -2304,6 +2549,7 @@ class thena_gauge_V2(web3wrap):
         abi_filename: str = "",
         abi_path: str = "",
         block: int = 0,
+        timestamp: int = 0,
         custom_web3: Web3 | None = None,
         custom_web3Url: str | None = None,
     ):
@@ -2316,6 +2562,7 @@ class thena_gauge_V2(web3wrap):
             abi_filename=self._abi_filename,
             abi_path=self._abi_path,
             block=block,
+            timestamp=timestamp,
             custom_web3=custom_web3,
             custom_web3Url=custom_web3Url,
         )

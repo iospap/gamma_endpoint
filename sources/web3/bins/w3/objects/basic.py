@@ -2,9 +2,11 @@ import logging
 import math
 import datetime as dt
 
-from web3 import Web3, exceptions
+from web3 import Web3, exceptions, AsyncWeb3, AsyncHTTPProvider
+from web3.eth import AsyncEth
+from web3.net import AsyncNet
 from web3.contract import Contract
-from web3.middleware import geth_poa_middleware, simple_cache_middleware
+from web3.middleware import async_geth_poa_middleware, async_simple_cache_middleware
 
 import asyncio
 
@@ -21,6 +23,7 @@ class web3wrap:
         abi_filename: str = "",
         abi_path: str = "",
         block: int = 0,
+        timestamp: int = 0,
         custom_web3: Web3 | None = None,
         custom_web3Url: str | None = None,
     ):
@@ -41,12 +44,73 @@ class web3wrap:
         # setup contract to query
         self.setup_contract(contract_address=self._address, contract_abi=self._abi)
 
-        self._block = 0
+        self._timestamp = timestamp
+        self._block = block
+        # control var
+        self._init = False
 
-    async def _init(self):
-        # set block
-        if not self._block:
-            self._block = self._w3.eth.get_block("latest").number
+    # initializers
+
+    async def init(self, methods_list: list[str] | None = None):
+        """place queries to fill this class properties
+
+        Args:
+            methods_list ( list[str] | None, optional): T
+                This can be a list of the names of the properties to be filled.
+                 to handle sub-properties, use a tuple with the name of the property and the list of sub-property names.
+                . Defaults to all.
+        """
+        if not self._init:
+            # add defaults if no methlist is defined
+            if not methods_list:
+                methods_list = [self.init_all()]
+                # initialize supers
+                try:
+                    await super().init(methods_list=methods_list)
+                except AttributeError:
+                    # no super ?
+                    pass
+
+            #
+            to_call = []
+            for method in methods_list:
+                try:
+                    if isinstance(method, tuple):
+                        # if it is a tuple, it is a method with params
+                        meth, params = method
+                        if f := getattr(self, f"init_{meth}"):
+                            to_call.append(f(params))
+                    else:
+                        if f := getattr(
+                            self,
+                            f"init_{method}",
+                        ):
+                            to_call.append(f())
+                except AttributeError:
+                    # there is no attribute with that name
+                    pass
+
+            # call in parallel
+            await asyncio.gather(*to_call)
+
+        self._init = True
+
+    async def init_all(self):
+        # timestamp and block may be forced by parent
+        if self._timestamp == 0 or self._block == 0:
+            await self.init_block()
+
+    async def init_min(self):
+        await self.init_all()
+
+    async def init_block(self):
+        block_data = (
+            await self._w3.eth.get_block("latest")
+            if not self._block
+            else await self._w3.eth.get_block(self._block)
+        )
+        self._block = block_data.number
+        self._timestamp = block_data.timestamp
 
     def setup_abi(self, abi_filename: str, abi_path: str):
         # set optionals
@@ -60,26 +124,21 @@ class web3wrap:
         )
 
     def setup_w3(self, network: str, web3Url: str | None = None) -> Web3:
-        # create Web3 helper
-        # result = Web3(
-        #     Web3.HTTPProvider(
-        #         web3Url or CONFIGURATION["sources"]["web3Providers"][network],
-        #         request_kwargs={"timeout": 60},
-        #     )
-        # )
-        result = Web3(
-            Web3.AsyncHTTPProvider(
+        # setup web3
+        result = AsyncWeb3(
+            AsyncHTTPProvider(
                 web3Url or CONFIGURATION["sources"]["web3Providers"][network],
                 request_kwargs={"timeout": 30},
-            )
+            ),
+            modules={"eth": AsyncEth, "net": AsyncNet},
         )
 
         # add simple cache module
-        result.middleware_onion.add(simple_cache_middleware)
+        result.middleware_onion.add(async_simple_cache_middleware)
 
         # add middleware as needed
         if network != "ethereum":
-            result.middleware_onion.inject(geth_poa_middleware, layer=0)
+            result.middleware_onion.inject(async_geth_poa_middleware, layer=0)
 
         return result
 
@@ -111,6 +170,15 @@ class web3wrap:
     def block(self, value: int):
         self._block = value
 
+    @property
+    def timestamp(self) -> int:
+        """ """
+        return self._timestamp
+
+    @timestamp.setter
+    def timestamp(self, value: int):
+        self._timestamp = value
+
     # HELPERS
     async def average_blockTime(self, blocksaway: int = 500) -> dt.datetime.timestamp:
         """Average time of block creation
@@ -126,7 +194,7 @@ class web3wrap:
         blocksaway: int = math.floor(blocksaway)
         #
         if blocksaway > 0:
-            block_current, block_past = asyncio.gather(
+            block_current, block_past = await asyncio.gather(
                 self._w3.eth.get_block("latest"),
                 self._w3.eth.get_block(block_current.number - blocksaway),
             )
@@ -412,10 +480,11 @@ class web3wrap:
             )
 
     async def as_dict(self, convert_bint=False) -> dict:
-        result = {
-            "block": self.block,
-            "timestamp": await self.timestampFromBlockNumber(block=self.block),
-        }
+        # it will only fill when block is not set
+        if not self._init:
+            await self.init()
+
+        result = {"block": self.block, "timestamp": self.timestamp}
 
         # lower case address to be able to be directly compared
         result["address"] = self.address.lower()
@@ -431,6 +500,7 @@ class erc20(web3wrap):
         abi_filename: str = "",
         abi_path: str = "",
         block: int = 0,
+        timestamp: int = 0,
         custom_web3: Web3 | None = None,
         custom_web3Url: str | None = None,
     ):
@@ -443,32 +513,60 @@ class erc20(web3wrap):
             abi_filename=self._abi_filename,
             abi_path=self._abi_path,
             block=block,
+            timestamp=timestamp,
             custom_web3=custom_web3,
             custom_web3Url=custom_web3Url,
         )
 
+    # initializers
+
+    async def init_all(self):
+        """ini all the data for the object to be usable"""
+        to_call = [self.init_decimals(), self.init_symbol(), self.init_totalSupply()]
+
+        # call in parallel
+        await asyncio.gather(*to_call)
+
+    async def init_min(self):
+        """init the minimum amount of data for the object to be usable"""
+        to_call = [self.init_decimals(), self.init_symbol()]
+
+        # call in parallel
+        await asyncio.gather(*to_call)
+
+    async def init_decimals(self):
+        self._decimals = await self._contract.functions.decimals().call()
+
+    async def init_totalSupply(self):
+        self._totalSupply = await self._contract.functions.totalSupply().call(
+            block_identifier=self.block
+        )
+
+    async def init_symbol(self):
+        self._symbol = (
+            "MKR"
+            if self.address == "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2"
+            else await self._contract.functions.symbol().call()
+        )
+
     # PROPERTIES
+
     @property
-    async def decimals(self) -> int:
-        return await self._contract.functions.decimals().call()
+    def decimals(self) -> int:
+        return self._decimals
+
+    @property
+    def totalSupply(self) -> int:
+        return self._totalSupply
+
+    @property
+    def symbol(self) -> str:
+        return self._symbol
 
     async def balanceOf(self, address: str) -> int:
         return await self._contract.functions.balanceOf(
             Web3.to_checksum_address(address)
         ).call(block_identifier=self.block)
-
-    @property
-    async def totalSupply(self) -> int:
-        return await self._contract.functions.totalSupply().call(
-            block_identifier=self.block
-        )
-
-    @property
-    async def symbol(self) -> str:
-        # MKR special: ( has a too large for python int )
-        if self.address == "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2":
-            return "MKR"
-        return await self._contract.functions.symbol().call()
 
     async def allowance(self, owner: str, spender: str) -> int:
         return await self._contract.functions.allowance(
@@ -486,10 +584,11 @@ class erc20(web3wrap):
         """
         result = await super().as_dict(convert_bint=convert_bint)
 
-        result["decimals"], result["totalSupply"], result["symbol"] = asyncio.gather(
-            self.decimals,
-            str(self.totalSupply) if convert_bint else self.totalSupply,
-            self.symbol,
-        )
+        if not self._init:
+            await self.init()
+
+        result["decimals"] = self.decimals
+        result["totalSupply"] = self.totalSupply
+        result["symbol"] = self.symbol
 
         return result

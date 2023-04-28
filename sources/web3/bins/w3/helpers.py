@@ -76,8 +76,13 @@ def build_hypervisor_registry(
         return registry
 
 
-def build_hypervisor_anyRpc(
-    network: Chain, dex: Dex, block: int, hypervisor_address: str, rpcUrls: list[str]
+async def build_hypervisor_anyRpc(
+    network: Chain,
+    dex: Dex,
+    block: int,
+    hypervisor_address: str,
+    rpcUrls: list[str],
+    test: bool = False,
 ) -> gamma_hypervisor:
     """return a tested hype that uses any of the supplyed RPC urls
 
@@ -86,10 +91,13 @@ def build_hypervisor_anyRpc(
         dex (str):
         block (int):
         hypervisor_address (str):
+        rpcUrls (list[str]): list of RPC urls to be used
+        test: (bool): if true, test the hype before returning it
 
     Returns:
         gamma_hypervisor:
     """
+    hypervisor = None
     for rpcUrl in rpcUrls:
         try:
             # construct hype
@@ -100,31 +108,34 @@ def build_hypervisor_anyRpc(
                 hypervisor_address=hypervisor_address,
                 custom_web3Url=rpcUrl,
             )
-            # test its working
-            hypervisor.fee
+            if test:
+                # test its working
+                await hypervisor.init_fee()  # test fee
             # return hype
-            return hypervisor
+            break
         except Exception as e:
             # not working hype
             print(e)
             pass
-
-    return None
+    # return hype
+    return hypervisor
 
 
 def build_hypervisor_registry_anyRpc(
-    network: Chain, dex: Dex, block: int, rpcUrls: list[str]
+    network: Chain, dex: Dex, block: int, rpcUrls: list[str], test: bool = False
 ) -> gamma_hypervisor_registry:
-    """return a tested hype registry that uses any of the supplyed RPC urls
+    """return a hype registry that uses any of the supplyed RPC urls
 
     Args:
         network (str):
         dex (str):
         block (int):
+        test: (bool): if true, test the hype before returning it
 
     Returns:
         gamma hype registry:
     """
+    registry = None
     for rpcUrl in rpcUrls:
         try:
             # construct hype
@@ -134,12 +145,13 @@ def build_hypervisor_registry_anyRpc(
                 block=block,
                 custom_web3Url=rpcUrl,
             )
-            # test its working
-            registry.counter
+            if test:
+                # test its working
+                registry.counter
             # return hype
-            return registry
+            break
         except:
             # not working hype
             pass
 
-    return None
+    return registry
