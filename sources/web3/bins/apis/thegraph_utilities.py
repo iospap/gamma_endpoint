@@ -1505,7 +1505,7 @@ class arrakis_scraper(thegraph_scraper_helper):
                     }}
                     }}
             """.format(
-                _filter, _skip
+                filter, skip
             )
         elif name == "univ3_gelato":
             return """{{
