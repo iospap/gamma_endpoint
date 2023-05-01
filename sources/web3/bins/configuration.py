@@ -5,7 +5,7 @@ from sources.web3.bins.general.general_utilities import (
 
 
 # load configuration file
-CONFIGURATION = {}  # load_configuration()
+CONFIGURATION = {"cache": {"save_path": "data/cache"}}  # load_configuration()
 
 
 # check configuration

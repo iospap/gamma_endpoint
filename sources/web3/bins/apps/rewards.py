@@ -32,18 +32,14 @@ async def search_rewards_data_zyberswap(hypervisor_address: str, network: Chain)
             test=True,
         )
 
-        # await zyberchef.init_block()
-
         # get the pool length
         poolLength = await zyberchef.poolLength
         for pid in range(poolLength):
-            result.append(
-                await get_rewards_data_zyberswap(
-                    hypervisor_address=hypervisor_address,
-                    network=network,
-                    pid=pid,
-                    zyberchef=zyberchef,
-                )
+            result += await get_rewards_data_zyberswap(
+                hypervisor_address=hypervisor_address,
+                network=network,
+                pid=pid,
+                zyberchef=zyberchef,
             )
 
     return result
@@ -55,13 +51,14 @@ async def get_rewards_data_zyberswap(
     pid: int,
     zyberchef_address: str | None = None,
     zyberchef: zyberswap_masterchef_v1 | None = None,
-):
+) -> list[dict]:
+    result = []
     # create zyberchef
     if not zyberchef and zyberchef_address:
         zyberchef = zyberswap_masterchef_v1(
             address=zyberchef_address, network=network.value
         )
-    else:
+    elif not zyberchef and not zyberchef_address:
         raise Exception("zyberchef_address or zyberchef must be provided")
 
     #  lpToken address, allocPoint uint256, lastRewardTimestamp uint256, accZyberPerShare uint256, depositFeeBP uint16, harvestInterval uint256, totalLp uint256
@@ -83,17 +80,21 @@ async def get_rewards_data_zyberswap(
             poolRewardsPerSec[3],
         ):
             if rewardsPerSec:
-                yield {
-                    "network": network.value,
-                    "block": await zyberchef.block,
-                    "timestamp": await zyberchef.timestamp,
-                    "hypervisor_address": hypervisor_address,
-                    "rewardToken": address,
-                    "rewardToken_symbol": symbol,
-                    "rewardToken_decimals": decimals,
-                    "poolRewardsPerSec": poolRewardsPerSec,
-                    "poolTotalLp": pinfo[6],
-                }
+                result.append(
+                    {
+                        "network": network.value,
+                        "block": await zyberchef.block,
+                        "timestamp": await zyberchef.timestamp,
+                        "hypervisor_address": hypervisor_address,
+                        "rewardToken": address,
+                        "rewardToken_symbol": symbol,
+                        "rewardToken_decimals": decimals,
+                        "poolRewardsPerSec": rewardsPerSec,
+                        "poolTotalLp": pinfo[6],
+                    }
+                )
+
+    return result
 
 
 async def get_rewards(dex: Dex, hypervisor_address: str, network: Chain):
@@ -105,21 +106,50 @@ async def get_rewards(dex: Dex, hypervisor_address: str, network: Chain):
             hypervisor_address=hypervisor_address, network=network
         )
         hypervisor_data = await hypervisors.get_hypervisor_data(
-            network=network, dex=dex, hypervisor_address=hypervisor_address
+            network=network,
+            dex=dex,
+            hypervisor_address=hypervisor_address,
+            convert_to_decimal=True,
         )
 
         # add prices to hypervisor
-        hypervisor_data = await add_prices_to_hypervisor(
-            hypervisor=hypervisor_data, network=network
+        (
+            hypervisor_data["token0_price_usd"],
+            hypervisor_data["token1_price_usd"],
+        ) = await asyncio.gather(
+            get_token_price_usd(
+                token_address=hypervisor_data["token0_address"].lower(),
+                network=network.value,
+                block=0,
+            ),
+            get_token_price_usd(
+                token_address=hypervisor_data["token1_address"].lower(),
+                network=network.value,
+                block=0,
+            ),
+        )
+
+        hypervisor_data["lpToken_price_usd"] = (
+            (
+                (
+                    hypervisor_data["token0_price_usd"]
+                    * (int(hypervisor_data["totalAmounts"]["total0"]))
+                    + hypervisor_data["token1_price_usd"]
+                    * (int(hypervisor_data["totalAmounts"]["total1"]))
+                )
+                / hypervisor_data["totalSupply"]
+            )
+            if hypervisor_data["totalSupply"]
+            else 0
         )
 
         for rewards in rewards_data:
             # calculate rewards APR
-            apr = await calculate_rewards_apr(
-                token_price=get_token_price_usd(
-                    token_address=rewards["rewardToken"],
-                    network=network,
-                    block=rewards["block"],
+            apr = calculate_rewards_apr(
+                token_price=await get_token_price_usd(
+                    token_address=rewards["rewardToken"].lower(),
+                    network=network.value,
+                    block=0,
                 ),
                 token_decimals=rewards["rewardToken_decimals"],
                 token_reward_rate=rewards["poolRewardsPerSec"],

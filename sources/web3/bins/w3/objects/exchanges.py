@@ -37,10 +37,6 @@ class univ3_pool(web3wrap):
             custom_web3Url=custom_web3Url,
         )
 
-        self.init_vars()
-
-    # initializers
-    def init_vars(self):
         self._factory: str = None
         self._fee: int = None
         self._feeGrowthGlobal0X128: int = None
@@ -622,9 +618,6 @@ class algebrav3_dataStorageOperator(web3wrap):
             custom_web3Url=custom_web3Url,
         )
 
-        self.init_vars()
-
-    def init_vars(self):
         self._feeConfig = None
         self._window = None
 
@@ -680,11 +673,7 @@ class algebrav3_pool(web3wrap):
             custom_web3Url=custom_web3Url,
         )
 
-        self.init_vars()
 
-    # initializers
-
-    def init_vars(self):
         self._activeIncentive = None
         self._dataStorageOperator = None
         self._factory = None

@@ -40,11 +40,8 @@ class gamma_hypervisor(erc20):
             custom_web3Url=custom_web3Url,
         )
 
-        self.init_vars()
+        # initializers
 
-    # initializers
-
-    def init_vars(self):
         self._symbol: str | None = None
         self._baseUpper: int | None = None
         self._baseLower: int | None = None
@@ -927,7 +924,8 @@ class gamma_hypervisor_registry(web3wrap):
             custom_web3Url=custom_web3Url,
         )
 
-        self.init_vars()
+        self._counter: int | None = None
+        self._owner: str | None = None
 
     # implement harcoded erroneous addresses to reduce web3 calls
     __blacklist_addresses = {
@@ -941,10 +939,6 @@ class gamma_hypervisor_registry(web3wrap):
         "optimism": ["0xc7722271281Aa6D5D027fC9B21989BE99424834f".lower()],
         "arbitrum": ["0x38f81e638f9e268e8417F2Ff76C270597fa077A0".lower()],
     }
-
-    def init_vars(self):
-        self._counter: int | None = None
-        self._owner: str | None = None
 
     @property
     async def counter(self) -> int:
@@ -1093,9 +1087,6 @@ class gamma_masterchef_rewarder(web3wrap):
             custom_web3Url=custom_web3Url,
         )
 
-        self.init_vars()
-
-    def init_vars(self):
         self._acc_token_precision: int | None = None
         self._masterchef_v2: str | None = None
         self._funder: str | None = None
@@ -1302,9 +1293,7 @@ class zyberswap_masterchef_rewarder(web3wrap):
             custom_web3=custom_web3,
             custom_web3Url=custom_web3Url,
         )
-        self.init_vars()
 
-    def init_vars(self):
         self._distributorV2: str | None = None
         self._isNative: bool | None = None
         self._owner: str | None = None
@@ -1511,9 +1500,6 @@ class gamma_masterchef_v1(web3wrap):
             custom_web3Url=custom_web3Url,
         )
 
-        self.init_vars()
-
-    def init_vars(self):
         self._sushi: str | None = None
         self._owner: str | None = None
         self._pendingOwner: str | None = None
@@ -1641,9 +1627,6 @@ class gamma_masterchef_v2(web3wrap):
             custom_web3Url=custom_web3Url,
         )
 
-        self.init_vars()
-
-    def init_vars(self):
         self._endTimestamp: int | None = None
         self._erc20: str | None = None
         self._feeAddress: str | None = None
@@ -1865,9 +1848,6 @@ class zyberswap_masterchef_v1(web3wrap):
             custom_web3Url=custom_web3Url,
         )
 
-        self.init_vars()
-
-    def init_vars(self):
         self._maximum_deposit_fee_rate: int | None = None
         self._maximum_harvest_interval: int | None = None
         self._feeAddress: str | None = None
@@ -2249,9 +2229,7 @@ class gamma_masterchef_registry(web3wrap):
             custom_web3=custom_web3,
             custom_web3Url=custom_web3Url,
         )
-        self.init_vars()
 
-    def init_vars(self):
         self._owner: str | None = None
         self._counter: int | None = None
 
@@ -2398,9 +2376,7 @@ class thena_voter_v3(web3wrap):
             custom_web3=custom_web3,
             custom_web3Url=custom_web3Url,
         )
-        self.init_vars()
 
-    def init_vars(self):
         self._max_vote_delay: int | None = None
         self._vote_delay: int | None = None
         self._epochTimestamp: int | None = None
@@ -2935,9 +2911,7 @@ class thena_gauge_V2(web3wrap):
             custom_web3=custom_web3,
             custom_web3Url=custom_web3Url,
         )
-        self.init_vars()
 
-    def init_vars(self):
         self._distribution: str | None = None
         self._duration: int | None = None
         self._token: str | None = None

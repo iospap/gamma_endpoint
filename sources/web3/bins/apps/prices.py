@@ -2,7 +2,7 @@ import asyncio
 from sources.web3.bins.mixed.price_utilities import price_scraper
 
 
-async def add_prices_to_hypervisor(hypervisor: dict, network: str) -> dict:
+def add_prices_to_hypervisor(hypervisor: dict, network: str) -> dict:
     """Try to add usd prices for the hypervisor's tokens and LPtoken using price scraper ( coingecko + subgraph)
 
     Args:
@@ -17,17 +17,15 @@ async def add_prices_to_hypervisor(hypervisor: dict, network: str) -> dict:
         price_helper = price_scraper(cache=False)
 
         # get token prices
-        price_token0, price_token1 = await asyncio.gather(
-            price_helper.get_price(
-                network=network,
-                token_id=hypervisor["token0"]["address"],
-                block=hypervisor["block"],
-            ),
-            price_helper.get_price(
-                network=network,
-                token_id=hypervisor["token1"]["address"],
-                block=hypervisor["block"],
-            ),
+        price_token0 = price_helper.get_price(
+            network=network,
+            token_id=hypervisor["token0"]["address"],
+            block=hypervisor["block"],
+        )
+        price_token1 = price_helper.get_price(
+            network=network,
+            token_id=hypervisor["token1"]["address"],
+            block=hypervisor["block"],
         )
 
         # get LPtoken price
@@ -51,7 +49,7 @@ async def add_prices_to_hypervisor(hypervisor: dict, network: str) -> dict:
         hypervisor["token0_price_usd"] = price_token0
         hypervisor["token1_price_usd"] = price_token1
 
-    except Exception:
+    except Exception as err:
         pass
 
     return hypervisor
@@ -71,7 +69,7 @@ async def get_token_price_usd(token_address: str, network: str, block: int) -> f
     price_helper = price_scraper(cache=False)
 
     try:
-        price_token = await price_helper.get_price(
+        price_token = price_helper.get_price(
             network=network,
             token_id=token_address,
             block=block,

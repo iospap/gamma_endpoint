@@ -102,9 +102,16 @@ async def hypervisor_uncollected_fees(
     }
 
 
-async def get_hypervisor_data(network: Chain, dex: Dex, hypervisor_address: str):
-    if hypervisor := build_hypervisor_anyRpc(
-        network=network, dex=dex, block=0, hypervisor_address=hypervisor_address
+async def get_hypervisor_data(
+    network: Chain, dex: Dex, hypervisor_address: str, convert_to_decimal: bool = False
+):
+    if hypervisor := await build_hypervisor_anyRpc(
+        network=network,
+        dex=dex,
+        block=0,
+        hypervisor_address=hypervisor_address,
+        rpcUrls=RPC_URLS[network.value],
+        test=True,
     ):
         block, timestamp = await hypervisor.init_block()
         (
@@ -124,16 +131,14 @@ async def get_hypervisor_data(network: Chain, dex: Dex, hypervisor_address: str)
         (
             token0_decimals,
             token1_decimals,
-            token0_address,
-            token1_address,
-        ) = await asyncio.gather(
-            token0.decimals, token1.decimals, token0.address, token1.address
-        )
+        ) = await asyncio.gather(token0.decimals, token1.decimals)
+        token0_address = token0.address
+        token1_address = token1.address
 
-        totalSupply = hypervisor.totalSupply / 10**hypervisor_decimals
-
-        totalAmounts["total0"] = totalAmounts["total0"] / 10**token0_decimals
-        totalAmounts["total1"] = totalAmounts["total1"] / 10**token1_decimals
+        if convert_to_decimal:
+            totalSupply = totalSupply / 10**hypervisor_decimals
+            totalAmounts["total0"] = totalAmounts["total0"] / 10**token0_decimals
+            totalAmounts["total1"] = totalAmounts["total1"] / 10**token1_decimals
 
         return {
             "block": block,

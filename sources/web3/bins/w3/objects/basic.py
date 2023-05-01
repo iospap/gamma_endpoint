@@ -467,9 +467,6 @@ class erc20(web3wrap):
             custom_web3Url=custom_web3Url,
         )
 
-        self.init_vars()
-
-    def init_vars(self):
         self._decimals = None
         self._totalSupply = None
         self._symbol = None
