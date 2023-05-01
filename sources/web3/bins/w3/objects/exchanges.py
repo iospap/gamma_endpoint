@@ -26,9 +26,6 @@ class univ3_pool(web3wrap):
         self._abi_filename = abi_filename or "univ3_pool"
         self._abi_path = abi_path or "sources/common/abis/uniswap/v3"
 
-        self._token0: erc20 = None
-        self._token1: erc20 = None
-
         super().__init__(
             address=address,
             network=network,
@@ -40,80 +37,63 @@ class univ3_pool(web3wrap):
             custom_web3Url=custom_web3Url,
         )
 
+        self.init_vars()
+
     # initializers
-
-    async def init_all(self):
-        """ini all the data for the object to be usable"""
-        to_call = [
-            self.init_fee(),
-            self.init_feeGrowthGlobal0X128(),
-            self.init_feeGrowthGlobal1X128(),
-            self.init_slot0(),
-            self.init_token0(methods_list=["all"]),
-            self.init_token1(methods_list=["all"]),
-            self.init_factory(),
-            self.init_liquidity(),
-            self.init_maxLiquidityPerTick(),
-            self.init_protocolFees(),
-            self.init_tickSpacing(),
-        ]
-
-        # call in parallel
-        await asyncio.gather(*to_call)
-
-    async def init_min(self):
-        """init the minimum amount of data for the object to be usable"""
-        to_call = [
-            self.init_fee(),
-            self.init_feeGrowthGlobal0X128(),
-            self.init_feeGrowthGlobal1X128(),
-            self.init_slot0(),
-            self.init_token0(methods_list=["min"]),
-            self.init_token1(methods_list=["min"]),
-        ]
-
-        # call in parallel
-        await asyncio.gather(*to_call)
+    def init_vars(self):
+        self._factory: str = None
+        self._fee: int = None
+        self._feeGrowthGlobal0X128: int = None
+        self._feeGrowthGlobal1X128: int = None
+        self._liquidity: int = None
+        self._maxLiquidityPerTick: int = None
+        self._protocolFees: int = None
+        self._slot0: dict = None
+        self._tick: int = None
+        self._tickCurrent: int = None
+        self._tickSpacing: int = None
+        self._token0: erc20 = None
+        self._token1: erc20 = None
 
     async def init_factory(self):
         self._factory = await self._contract.functions.factory().call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
 
     async def init_fee(self):
         self._fee = await self._contract.functions.fee().call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
 
     async def init_feeGrowthGlobal0X128(self):
         self._feeGrowthGlobal0X128 = (
             await self._contract.functions.feeGrowthGlobal0X128().call(
-                block_identifier=self.block
+                block_identifier=await self.block
             )
         )
 
     async def init_feeGrowthGlobal1X128(self):
         self._feeGrowthGlobal1X128 = (
             await self._contract.functions.feeGrowthGlobal1X128().call(
-                block_identifier=self.block
+                block_identifier=await self.block
             )
         )
 
     async def init_liquidity(self):
         self._liquidity = await self._contract.functions.liquidity().call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
 
     async def init_maxLiquidityPerTick(self):
         self._maxLiquidityPerTick = (
             await self._contract.functions.maxLiquidityPerTick().call(
-                block_identifier=self.block
+                block_identifier=await self.block
             )
         )
 
     async def init_protocolFees(self):
         self._protocolFees = await self._contract.functions.protocolFees().call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
 
     async def init_slot0(self):
@@ -128,7 +108,9 @@ class univ3_pool(web3wrap):
                    feeProtocol   uint8 :  0
                    unlocked   bool :  true
         """
-        tmp = await self._contract.functions.slot0().call(block_identifier=self.block)
+        tmp = await self._contract.functions.slot0().call(
+            block_identifier=await self.block
+        )
         self._slot0 = {
             "sqrtPriceX96": tmp[0],
             "tick": tmp[1],
@@ -141,84 +123,104 @@ class univ3_pool(web3wrap):
 
     async def init_tickSpacing(self):
         self._tickSpacing = await self._contract.functions.tickSpacing().call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
 
-    async def init_token0(self, methods_list: list[str] | None = None):
+    async def init_token0(self):
         self._token0_address = await self._contract.functions.token0().call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
         self._token0 = erc20(
             address=self._token0_address,
             network=self._network,
-            block=self.block,
+            block=await self.block,
+            timestamp=await self.timestamp,
             custom_web3Url=self.w3.provider.endpoint_uri,
         )
-        # init
-        await self._token0.init(methods_list=methods_list)
 
-    async def init_token1(self, methods_list: list[str] | None = None):
+    async def init_token1(self):
         self._token1_address = await self._contract.functions.token1().call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
         self._token1 = erc20(
             address=self._token1_address,
             network=self._network,
-            block=self.block,
+            block=await self.block,
+            timestamp=await self.timestamp,
             custom_web3Url=self.w3.provider.endpoint_uri,
         )
-        # init
-        await self._token1.init(methods_list=methods_list)
 
     # PROPERTIES
 
     @property
-    def factory(self) -> str:
+    async def factory(self) -> str:
+        if not self._factory:
+            await self.init_factory()
         return self._factory
 
     @property
-    def fee(self) -> int:
+    async def fee(self) -> int:
+        if not self._fee:
+            await self.init_fee()
         return self._fee
 
     @property
-    def feeGrowthGlobal0X128(self) -> int:
+    async def feeGrowthGlobal0X128(self) -> int:
+        if not self._feeGrowthGlobal0X128:
+            await self.init_feeGrowthGlobal0X128()
         return self._feeGrowthGlobal0X128
 
     @property
-    def feeGrowthGlobal1X128(self) -> int:
+    async def feeGrowthGlobal1X128(self) -> int:
+        if not self._feeGrowthGlobal1X128:
+            await self.init_feeGrowthGlobal1X128()
         return self._feeGrowthGlobal1X128
 
     @property
-    def liquidity(self) -> int:
+    async def liquidity(self) -> int:
+        if not self._liquidity:
+            await self.init_liquidity()
         return self._liquidity
 
     @property
-    def maxLiquidityPerTick(self) -> int:
+    async def maxLiquidityPerTick(self) -> int:
+        if not self._maxLiquidityPerTick:
+            await self.init_maxLiquidityPerTick()
         return self._maxLiquidityPerTick
 
     @property
-    def protocolFees(self) -> int:
+    async def protocolFees(self) -> int:
+        if not self._protocolFees:
+            await self.init_protocolFees()
         return self._protocolFees
 
     @property
-    def slot0(self) -> dict:
+    async def slot0(self) -> dict:
+        if not self._slot0:
+            await self.init_slot0()
         return self._slot0
 
     @property
-    def tickSpacing(self) -> int:
+    async def tickSpacing(self) -> int:
+        if not self._tickSpacing:
+            await self.init_tickSpacing()
         return self._tickSpacing
 
     @property
-    def token0(self) -> erc20:
+    async def token0(self) -> erc20:
+        if not self._token0:
+            await self.init_token0()
         return self._token0
 
     @property
-    def token1(self) -> erc20:
+    async def token1(self) -> erc20:
+        if not self._token1:
+            await self.init_token1()
         return self._token1
 
     async def observations(self, input: int):
         return await self._contract.functions.observations(input).call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
 
     async def observe(self, secondsAgo: int):
@@ -233,7 +235,7 @@ class univ3_pool(web3wrap):
 
         """
         return await self._contract.functions.observe(secondsAgo).call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
 
     async def positions(self, position_key: str) -> dict:
@@ -251,7 +253,7 @@ class univ3_pool(web3wrap):
                    tokensOwed1   uint128 :  0
         """
         result = await self._contract.functions.positions(position_key).call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
         return {
             "liquidity": result[0],
@@ -264,11 +266,11 @@ class univ3_pool(web3wrap):
     async def snapshotCumulativeInside(self, tickLower: int, tickUpper: int):
         return await self._contract.functions.snapshotCumulativeInside(
             tickLower, tickUpper
-        ).call(block_identifier=self.block)
+        ).call(block_identifier=await self.block)
 
     async def tickBitmap(self, input: int) -> int:
         return await self._contract.functions.tickBitmap(input).call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
 
     async def ticks(self, tick: int) -> dict:
@@ -288,7 +290,7 @@ class univ3_pool(web3wrap):
                        initialized   bool :  false
         """
         result = await self._contract.functions.ticks(tick).call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
         return {
             "liquidityGross": result[0],
@@ -311,30 +313,30 @@ class univ3_pool(web3wrap):
 
     # CUSTOM PROPERTIES
     @property
-    def block(self) -> int:
-        return self._block
+    async def block(self) -> int:
+        return await super().block
 
     @block.setter
     def block(self, value: int):
         # set block
         self._block = value
-        self._token0.block = value
-        self._token1.block = value
-        # reset init control vars
-        self._init = False
-        self._token0._init = False
-        self._token1._init = False
+        if self._token0:
+            self._token0.block = value
+        if self._token1:
+            self._token1.block = value
 
     @property
-    def timestamp(self) -> int:
+    async def timestamp(self) -> int:
         """ """
-        return self._timestamp
+        return await super().timestamp
 
     @timestamp.setter
     def timestamp(self, value: int):
         self._timestamp = value
-        self._token0.timestamp = value
-        self._token1.timestamp = value
+        if self._token0:
+            self._token0.timestamp = value
+        if self._token1:
+            self._token1.timestamp = value
 
     # CUSTOM FUNCTIONS
     async def position(self, ownerAddress: str, tickLower: int, tickUpper: int) -> dict:
@@ -461,7 +463,14 @@ class univ3_pool(web3wrap):
         }
 
         # get position data and ticks
-        pos, ticks_lower, ticks_upper = await asyncio.gather(
+        (
+            pos,
+            ticks_lower,
+            ticks_upper,
+            slot0,
+            feeGrowthGlobal0X128,
+            feeGrowthGlobal1X128,
+        ) = await asyncio.gather(
             self.position(
                 ownerAddress=Web3.to_checksum_address(ownerAddress.lower()),
                 tickLower=tickLower,
@@ -469,8 +478,11 @@ class univ3_pool(web3wrap):
             ),
             self.ticks(tickLower),
             self.ticks(tickUpper),
+            self.slot0,
+            self.feeGrowthGlobal0X128,
+            self.feeGrowthGlobal1X128,
         )
-        tickCurrent = self.slot0["tick"]
+        tickCurrent = slot0["tick"]
 
         # save tokens owed
         result["qtty_token0_owed"] = pos["tokensOwed0"]
@@ -481,8 +493,8 @@ class univ3_pool(web3wrap):
             result["qtty_token0"],
             result["qtty_token1"],
         ) = univ3_formulas.get_uncollected_fees(
-            fee_growth_global_0=self.feeGrowthGlobal0X128,
-            fee_growth_global_1=self.feeGrowthGlobal1X128,
+            fee_growth_global_0=feeGrowthGlobal0X128,
+            fee_growth_global_1=feeGrowthGlobal1X128,
             tick_current=tickCurrent,
             tick_lower=tickLower,
             tick_upper=tickUpper,
@@ -497,11 +509,17 @@ class univ3_pool(web3wrap):
 
         # convert to decimal as needed
         if inDecimal:
+            # get token decimals
+            token0, token1 = await asyncio.gather(self.token0, self.token1)
+            decimals_token0, decimals_token1 = await asyncio.gather(
+                token0.decimals, token1.decimals
+            )
+
             result["qtty_token0"] = Decimal(result["qtty_token0"]) / Decimal(
-                10**self.token0.decimals
+                10**decimals_token0
             )
             result["qtty_token1"] = Decimal(result["qtty_token1"]) / Decimal(
-                10**self.token1.decimals
+                10**decimals_token1
             )
 
         # return result
@@ -519,18 +537,19 @@ class univ3_pool(web3wrap):
         """
         result = await super().as_dict(convert_bint=convert_bint)
 
-        if not self._init:
-            await self.init()
-
-        result["fee"] = self.fee
-        result["tickSpacing"] = self.tickSpacing
-
-        result["token0"], result["token1"] = await asyncio.gather(
+        (
+            result["fee"],
+            result["tickSpacing"],
+            result["token0"],
+            result["token1"],
+            result["protocolFees"],
+        ) = await asyncio(
+            self.fee,
+            self.tickSpacing,
             self.token0.as_dict(convert_bint=convert_bint),
             self.token1.as_dict(convert_bint=convert_bint),
+            self.protocolFees,
         )
-
-        result["protocolFees"] = self.protocolFees
 
         # identify pool dex
         result["dex"] = self.identify_dex_name()
@@ -540,15 +559,23 @@ class univ3_pool(web3wrap):
             result["protocolFees"] = [str(i) for i in result["protocolFees"]]
 
         if not static_mode:
-            self._as_dict_not_static_items(convert_bint, result)
+            await self._as_dict_not_static_items(convert_bint, result)
         return result
 
-    def _as_dict_not_static_items(self, convert_bint, result):
-        result["feeGrowthGlobal0X128"] = self.feeGrowthGlobal0X128
-        result["feeGrowthGlobal1X128"] = self.feeGrowthGlobal1X128
-        result["liquidity"] = self.liquidity
-        result["maxLiquidityPerTick"] = self.maxLiquidityPerTick
-        result["slot0"] = self.slot0
+    async def _as_dict_not_static_items(self, convert_bint, result):
+        (
+            result["feeGrowthGlobal0X128"],
+            result["feeGrowthGlobal1X128"],
+            result["liquidity"],
+            result["maxLiquidityPerTick"],
+            result["slot0"],
+        ) = await asyncio.gather(
+            self.feeGrowthGlobal0X128,
+            self.feeGrowthGlobal1X128,
+            self.liquidity,
+            self.maxLiquidityPerTick,
+            self.slot0,
+        )
 
         if convert_bint:
             result["feeGrowthGlobal0X128"] = str(result["feeGrowthGlobal0X128"])
@@ -595,45 +622,34 @@ class algebrav3_dataStorageOperator(web3wrap):
             custom_web3Url=custom_web3Url,
         )
 
+        self.init_vars()
+
+    def init_vars(self):
+        self._feeConfig = None
+        self._window = None
+
     # TODO: Implement contract functs calculateVolumePerLiquidity, getAverages, getFee, getSingleTimepoint, getTimepoints and timepoints
-
-    # initializers
-    async def init(self, methods_list: list[callable] | list[str] | None = None):
-        super().init(methods_list=methods_list)
-
-    async def init_all(self):
-        """ini all the data for the object to be usable"""
-        to_call = [
-            self.init_feeConfig(),
-            self.init_window(),
-        ]
-
-        # call in parallel
-        await asyncio.gather(*to_call)
-
-    async def init_min(self):
-        """init the minimum amount of data for the object to be usable"""
-        to_call = [self.init_feeConfig()]
-
-        # call in parallel
-        await asyncio.gather(*to_call)
 
     async def init_feeConfig(self):
         self._feeConfig = await self._contract.functions.feeConfig().call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
 
     async def init_window(self):
         self._window = await self._contract.functions.window().call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
 
     @property
-    def feeConfig(self):
+    async def feeConfig(self):
+        if not self._feeConfig:
+            await self.init_feeConfig()
         return self._feeConfig
 
     @property
-    def window(self):
+    async def window(self):
+        if not self._window:
+            await self.init_window()
         return self._window
 
 
@@ -653,11 +669,6 @@ class algebrav3_pool(web3wrap):
         self._abi_filename = abi_filename or "algebrav3pool"
         self._abi_path = abi_path or "sources/common/abis/algebra/v3"
 
-        self._token0: erc20 = None
-        self._token1: erc20 = None
-
-        self._dataStorage: algebrav3_dataStorageOperator = None
-
         super().__init__(
             address=address,
             network=network,
@@ -669,66 +680,46 @@ class algebrav3_pool(web3wrap):
             custom_web3Url=custom_web3Url,
         )
 
+        self.init_vars()
+
     # initializers
 
-    async def init_all(self):
-        """ini all the data for the object to be usable"""
-        to_call = [
-            self.init_activeIncentive(),
-            self.init_globalState(),
-            self.init_token0(),
-            self.init_token1(),
-            self.init_feeGrowthGlobal0X128(),
-            self.init_feeGrowthGlobal1X128(),
-            self.init_dataStorageOperator(),
-            self.init_factory(),
-            self.init_liquidity(),
-            self.init_liquidityCooldown(),
-            self.init_maxLiquidityPerTick(),
-            self.init_tickSpacing(),
-        ]
-
-        # call in parallel
-        await asyncio.gather(*to_call)
-
-    async def init_min(self):
-        """init the minimum amount of data for the object to be usable"""
-        to_call = [
-            self.init_activeIncentive(),
-            self.init_globalState(),
-            self.init_token0(),
-            self.init_token1(),
-            self.init_feeGrowthGlobal0X128(),
-            self.init_feeGrowthGlobal1X128(),
-        ]
-
-        # call in parallel
-        await asyncio.gather(*to_call)
+    def init_vars(self):
+        self._activeIncentive = None
+        self._dataStorageOperator = None
+        self._factory = None
+        self._globalState = None
+        self._liquidity = None
+        self._liquidityCooldown = None
+        self._maxLiquidityPerTick = None
+        self._tickSpacing = None
+        self._token0: erc20 = None
+        self._token1: erc20 = None
+        self._feeGrowthGlobal0X128 = None
+        self._feeGrowthGlobal1X128 = None
 
     async def init_activeIncentive(self):
         self._activeIncentive = self._contract.functions.activeIncentive().call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
 
-    async def init_dataStorageOperator(self, methods_list: list[str] | None = None):
+    async def init_dataStorageOperator(self):
         self._dataStorageOperator_address = (
             await self._contract.functions.dataStorageOperator().call(
-                block_identifier=self.block
+                block_identifier=await self.block
             )
         )
         self._dataStorageOperator = algebrav3_dataStorageOperator(
             address=self._dataStorageOperator_address,
             network=self._network,
-            block=self.block,
-            timestamp=self.timestamp,
+            block=await self.block,
+            timestamp=await self.timestamp,
             custom_web3Url=self.w3.provider.endpoint_uri,
         )
-        # init
-        self._dataStorageOperator.init(methods_list=methods_list)
 
     async def init_factory(self):
         self._factory = self._contract.functions.factory().call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
 
     async def init_globalState(self):
@@ -744,7 +735,7 @@ class algebrav3_pool(web3wrap):
                    unlocked   bool :  true
         """
         tmp = await self._contract.functions.globalState().call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
         self._globalState = {
             "sqrtPriceX96": tmp[0],
@@ -758,123 +749,145 @@ class algebrav3_pool(web3wrap):
 
     async def init_liquidity(self):
         self._liquidity = self._contract.functions.liquidity().call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
 
     async def init_liquidityCooldown(self):
         self._liquidityCooldown = self._contract.functions.liquidityCooldown().call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
 
     async def init_maxLiquidityPerTick(self):
         self._maxLiquidityPerTick = self._contract.functions.maxLiquidityPerTick().call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
 
     async def init_tickSpacing(self):
         self._tickSpacing = self._contract.functions.tickSpacing().call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
 
-    async def init_token0(self, methods_list: list[str] | None = None):
+    async def init_token0(self):
         self._token0_address = await self._contract.functions.token0().call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
         self._token0 = erc20(
             address=self._token0_address,
             network=self._network,
-            block=self.block,
+            block=await self.block,
+            timestamp=await self.timestamp,
             custom_web3Url=self.w3.provider.endpoint_uri,
         )
-        # init
-        await self._token0.init(methods_list=methods_list)
 
-    async def init_token1(self, methods_list: list[str] | None = None):
+    async def init_token1(self):
         self._token1_address = await self._contract.functions.token1().call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
         self._token1 = erc20(
             address=self._token1_address,
             network=self._network,
-            block=self.block,
+            block=await self.block,
+            timestamp=await self.timestamp,
             custom_web3Url=self.w3.provider.endpoint_uri,
         )
-        # init
-        await self._token1.init(methods_list=methods_list)
 
     async def init_feeGrowthGlobal0X128(self):
         self._feeGrowthGlobal0X128 = (
             await self._contract.functions.totalFeeGrowth0Token().call(
-                block_identifier=self.block
+                block_identifier=await self.block
             )
         )
 
     async def init_feeGrowthGlobal1X128(self):
         self._feeGrowthGlobal1X128 = (
             await self._contract.functions.totalFeeGrowth1Token().call(
-                block_identifier=self.block
+                block_identifier=await self.block
             )
         )
 
     # Properties
     @property
-    def activeIncentive(self) -> str:
+    async def activeIncentive(self) -> str:
+        if not self._activeIncentive:
+            await self.init_activeIncentive()
         return self._activeIncentive
 
     @property
-    def dataStorageOperator(self) -> algebrav3_dataStorageOperator:
+    async def dataStorageOperator(self) -> algebrav3_dataStorageOperator:
+        if not self._dataStorageOperator:
+            await self.init_dataStorageOperator()
         return self._dataStorageOperator_address
 
     @property
-    def factory(self) -> str:
+    async def factory(self) -> str:
+        if not self._factory:
+            await self.init_factory()
         return self._factory
 
     @property
-    def globalState(self) -> dict:
+    async def globalState(self) -> dict:
+        if not self._globalState:
+            await self.init_globalState()
         return self._globalState
 
     @property
-    def liquidity(self) -> int:
+    async def liquidity(self) -> int:
+        if not self._liquidity:
+            await self.init_liquidity()
         return self._liquidity
 
     @property
-    def liquidityCooldown(self) -> int:
+    async def liquidityCooldown(self) -> int:
+        if not self._liquidityCooldown:
+            await self.init_liquidityCooldown()
         return self._liquidityCooldown
 
     @property
-    def maxLiquidityPerTick(self) -> int:
+    async def maxLiquidityPerTick(self) -> int:
+        if not self._maxLiquidityPerTick:
+            await self.init_maxLiquidityPerTick()
         return self._maxLiquidityPerTick
 
     @property
-    def tickSpacing(self) -> int:
+    async def tickSpacing(self) -> int:
+        if not self._tickSpacing:
+            await self.init_tickSpacing()
         return self._tickSpacing
 
     @property
-    def token0(self) -> erc20:
+    async def token0(self) -> erc20:
+        if not self._token0:
+            await self.init_token0()
         return self._token0
 
     @property
-    def token1(self) -> erc20:
+    async def token1(self) -> erc20:
+        if not self._token1:
+            await self.init_token1()
         return self._token1
 
     @property
-    def feeGrowthGlobal0X128(self) -> int:
+    async def feeGrowthGlobal0X128(self) -> int:
+        if not self._feeGrowthGlobal0X128:
+            await self.init_feeGrowthGlobal0X128()
         return self._feeGrowthGlobal0X128
 
     @property
-    def feeGrowthGlobal1X128(self) -> int:
+    async def feeGrowthGlobal1X128(self) -> int:
+        if not self._feeGrowthGlobal1X128:
+            await self.init_feeGrowthGlobal1X128()
         return self._feeGrowthGlobal1X128
 
     @property
     async def getInnerCumulatives(self, bottomTick: int, topTick: int) -> dict:
         return await self._contract.functions.getInnerCumulatives(
             bottomTick, topTick
-        ).call(block_identifier=self.block)
+        ).call(block_identifier=await self.block)
 
     @property
     async def getTimepoints(self, secondsAgo: int) -> dict:
         return await self._contract.functions.getTimepoints(secondsAgo).call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
 
     async def positions(self, position_key: str) -> dict:
@@ -894,7 +907,7 @@ class algebrav3_pool(web3wrap):
         """
 
         result = await self._contract.functions.positions(HexBytes(position_key)).call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
         return {
             "liquidity": result[0],
@@ -907,7 +920,7 @@ class algebrav3_pool(web3wrap):
 
     async def tickTable(self, value: int) -> int:
         return await self._contract.functions.tickTable(value).call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
 
     async def ticks(self, tick: int) -> dict:
@@ -927,7 +940,7 @@ class algebrav3_pool(web3wrap):
                        initialized   bool :  false          initialized
         """
         result = await self._contract.functions.ticks(tick).call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
         return {
             "liquidityGross": result[0],
@@ -943,35 +956,35 @@ class algebrav3_pool(web3wrap):
     async def timepoints(self, index: int) -> dict:
         #   initialized bool, blockTimestamp uint32, tickCumulative int56, secondsPerLiquidityCumulative uint160, volatilityCumulative uint88, averageTick int24, volumePerLiquidityCumulative uint144
         return await self._contract.functions.timepoints(index).call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
 
     # CUSTOM PROPERTIES
     @property
-    def block(self) -> int:
-        return self._block
+    async def block(self) -> int:
+        return await super().block
 
     @block.setter
     def block(self, value: int):
         # set block
         self._block = value
-        self._token0.block = value
-        self._token1.block = value
-        # reset init control vars
-        self._init = False
-        self._token0._init = False
-        self._token1._init = False
+        if self._token0:
+            self._token0.block = value
+        if self._token1:
+            self._token1.block = value
 
     @property
-    def timestamp(self) -> int:
+    async def timestamp(self) -> int:
         """ """
-        return self._timestamp
+        return await super().timestamp
 
     @timestamp.setter
     def timestamp(self, value: int):
         self._timestamp = value
-        self._token0.timestamp = value
-        self._token1.timestamp = value
+        if self._token0:
+            self._token0.timestamp = value
+        if self._token1:
+            self._token1.timestamp = value
 
     # CUSTOM FUNCTIONS
     async def position(self, ownerAddress: str, tickLower: int, tickUpper: int) -> dict:
@@ -1096,7 +1109,14 @@ class algebrav3_pool(web3wrap):
         }
 
         # get position and ticks data
-        pos, ticks_lower, ticks_upper = await asyncio.gather(
+        (
+            pos,
+            ticks_lower,
+            ticks_upper,
+            globalState,
+            feeGrowthGlobal0X128,
+            feeGrowthGlobal1X128,
+        ) = await asyncio.gather(
             self.position(
                 ownerAddress=Web3.to_checksum_address(ownerAddress.lower()),
                 tickLower=tickLower,
@@ -1104,8 +1124,12 @@ class algebrav3_pool(web3wrap):
             ),
             self.ticks(tickLower),
             self.ticks(tickUpper),
+            self.globalState,
+            self.feeGrowthGlobal0X128,
+            self.feeGrowthGlobal1X128,
         )
-        tickCurrent = self.globalState["tick"]
+
+        tickCurrent = globalState["tick"]
 
         # get fees owed
         result["qtty_token0_owed"] = pos["tokensOwed0"]
@@ -1116,8 +1140,8 @@ class algebrav3_pool(web3wrap):
             result["qtty_token0"],
             result["qtty_token1"],
         ) = univ3_formulas.get_uncollected_fees(
-            fee_growth_global_0=self.feeGrowthGlobal0X128,
-            fee_growth_global_1=self.feeGrowthGlobal1X128,
+            fee_growth_global_0=feeGrowthGlobal0X128,
+            fee_growth_global_1=feeGrowthGlobal1X128,
             tick_current=tickCurrent,
             tick_lower=tickLower,
             tick_upper=tickUpper,
@@ -1133,8 +1157,10 @@ class algebrav3_pool(web3wrap):
         # convert to decimal as needed
         if inDecimal:
             # get token decimals
-            decimals_token0 = self.token0.decimals
-            decimals_token1 = self.token1.decimals
+            token0, token1 = await asyncio.gather(self.token0, self.token1)
+            decimals_token0, decimals_token1 = await asyncio.gather(
+                token0.decimals, token1.decimals
+            )
 
             result["qtty_token0"] = Decimal(result["qtty_token0"]) / Decimal(
                 10**decimals_token0
@@ -1159,18 +1185,23 @@ class algebrav3_pool(web3wrap):
 
         result = await super().as_dict(convert_bint=convert_bint)
 
-        if not self._init:
-            await self.init()
-
-        result["activeIncentive"] = self.activeIncentive
-        result["liquidityCooldown"] = self.liquidityCooldown
-        result["maxLiquidityPerTick"] = self.maxLiquidityPerTick
-        result["fee"] = self.globalState["fee"]
-
-        result["token0"], result["token1"] = await asyncio.gather(
+        (
+            result["activeIncentive"],
+            result["liquidityCooldown"],
+            result["maxLiquidityPerTick"],
+            result["token0"],
+            result["token1"],
+            result["globalState"],
+        ) = await asyncio.gather(
+            self.activeIncentive,
+            self.liquidityCooldown,
+            self.maxLiquidityPerTick,
             self.token0.as_dict(convert_bint=convert_bint),
             self.token1.as_dict(convert_bint=convert_bint),
+            self.globalState,
         )
+
+        result["fee"] = (result["globalState"]["fee"],)
 
         if convert_bint:
             result["liquidityCooldown"] = str(result["liquidityCooldown"])
@@ -1183,10 +1214,15 @@ class algebrav3_pool(web3wrap):
         result["dex"] = self.identify_dex_name()
 
         if not static_mode:
-            result["feeGrowthGlobal0X128"] = self.feeGrowthGlobal0X128
-            result["feeGrowthGlobal1X128"] = self.feeGrowthGlobal1X128
-            result["liquidity"] = self.liquidity
-            result["globalState"] = self.globalState
+            (
+                result["feeGrowthGlobal0X128"],
+                result["feeGrowthGlobal1X128"],
+                result["liquidity"],
+            ) = await asyncio.gather(
+                self.feeGrowthGlobal0X128,
+                self.feeGrowthGlobal1X128,
+                self.liquidity,
+            )
 
             if convert_bint:
                 result["feeGrowthGlobal0X128"] = str(result["feeGrowthGlobal0X128"])

@@ -1,3 +1,4 @@
+import random
 from sources.common.general.enums import Chain, Dex, ChainId
 
 from sources.web3.bins.w3.objects.protocols import (
@@ -6,6 +7,7 @@ from sources.web3.bins.w3.objects.protocols import (
     gamma_hypervisor_quickswap,
     gamma_hypervisor_thena,
     gamma_hypervisor_registry,
+    zyberswap_masterchef_v1,
 )
 
 from sources.web3.bins.configuration import STATIC_REGISTRY_ADDRESSES
@@ -97,6 +99,9 @@ async def build_hypervisor_anyRpc(
     Returns:
         gamma_hypervisor:
     """
+    # shuffle the rpc urls
+    random.shuffle(rpcUrls)
+    # loop over the rpc urls
     hypervisor = None
     for rpcUrl in rpcUrls:
         try:
@@ -109,19 +114,18 @@ async def build_hypervisor_anyRpc(
                 custom_web3Url=rpcUrl,
             )
             if test:
-                # test its working
-                await hypervisor.init_fee()  # test fee
+                # working test
+                await hypervisor._contract.functions.fee().call()  # test fee without block
             # return hype
             break
         except Exception as e:
             # not working hype
-            print(e)
-            pass
+            print(f" error creating hype: {e} -> rpc: {rpcUrl}")
     # return hype
     return hypervisor
 
 
-def build_hypervisor_registry_anyRpc(
+async def build_hypervisor_registry_anyRpc(
     network: Chain, dex: Dex, block: int, rpcUrls: list[str], test: bool = False
 ) -> gamma_hypervisor_registry:
     """return a hype registry that uses any of the supplyed RPC urls
@@ -135,6 +139,9 @@ def build_hypervisor_registry_anyRpc(
     Returns:
         gamma hype registry:
     """
+    # shuffle the rpc urls
+    random.shuffle(rpcUrls)
+    # loop over the rpc urls
     registry = None
     for rpcUrl in rpcUrls:
         try:
@@ -147,7 +154,7 @@ def build_hypervisor_registry_anyRpc(
             )
             if test:
                 # test its working
-                registry.counter
+                await registry._contract.functions.counter().call()
             # return hype
             break
         except:
@@ -155,3 +162,40 @@ def build_hypervisor_registry_anyRpc(
             pass
 
     return registry
+
+
+async def build_zyberchef_anyRpc(
+    address: str, network: Chain, block: int, rpcUrls: list[str], test: bool = False
+) -> zyberswap_masterchef_v1:
+    """return a hype registry that uses any of the supplyed RPC urls
+
+    Args:
+        network (str):
+        block (int):
+        test: (bool): if true, test the hype before returning it
+
+    """
+    # shuffle the rpc urls
+    random.shuffle(rpcUrls)
+    # loop over the rpc urls
+    result = None
+    for rpcUrl in rpcUrls:
+        try:
+            # construct hype
+            result = zyberswap_masterchef_v1(
+                address=address,
+                network=network,
+                block=block,
+                custom_web3Url=rpcUrl,
+            )
+            if test:
+                # test its working
+                # await result.poolLength
+                pass
+            # return hype
+            break
+        except:
+            # not working hype
+            pass
+
+    return result

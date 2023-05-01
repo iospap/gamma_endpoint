@@ -1,12 +1,12 @@
 from sources.common.general.enums import Chain, Dex, ChainId
 import asyncio
 
-# from sources.web3.bins.w3.objects.protocols import gamma_hypervisor_registry
 from sources.web3.bins.w3.helpers import (
     build_hypervisor,
     build_hypervisor_anyRpc,
     build_hypervisor_registry,
     build_hypervisor_registry_anyRpc,
+    build_zyberchef_anyRpc,
 )
 
 from sources.web3.bins.w3.objects.protocols import gamma_hypervisor
@@ -15,13 +15,13 @@ from sources.web3.bins.configuration import RPC_URLS, CONFIGURATION
 from sources.web3.bins.mixed.price_utilities import price_scraper
 
 
-def hypervisors_list(network: Chain, dex: Dex):
+async def hypervisors_list(network: Chain, dex: Dex):
     # get network registry address
-    registry = build_hypervisor_registry_anyRpc(
-        network=network, dex=dex, block=0, rpcUrls=RPC_URLS[network.value]
+    registry = await build_hypervisor_registry_anyRpc(
+        network=network, dex=dex, block=0, rpcUrls=RPC_URLS[network.value], test=True
     )
 
-    return registry.get_hypervisors_addresses()
+    return await registry.get_hypervisors_addresses()
 
 
 async def hypervisor_uncollected_fees(
@@ -36,40 +36,29 @@ async def hypervisor_uncollected_fees(
         test=True,
     )
 
-    # define what to initialize
-    await hypervisor.init(
-        methods_list=[
-            "block",
-            "symbol",
-            "baseUpper",
-            "baseLower",
-            "limitUpper",
-            "limitLower",
-            (
-                "pool",
-                [
-                    "slot0",
-                    "globalState",
-                    ("token0", ["decimals"]),
-                    ("token1", ["decimals"]),
-                    "feeGrowthGlobal0X128",
-                    "feeGrowthGlobal1X128",
-                ],
-            ),
-        ]
+    block, timestamp = await hypervisor.init_block()
+
+    # get property vars
+    symbol, baseUpper, baseLower, limitUpper, limitLower, pool = await asyncio.gather(
+        hypervisor.symbol,
+        hypervisor.baseUpper,
+        hypervisor.baseLower,
+        hypervisor.limitUpper,
+        hypervisor.limitLower,
+        hypervisor.pool,
     )
 
     base, limit = await asyncio.gather(
-        hypervisor.pool.get_fees_uncollected(
+        pool.get_fees_uncollected(
             ownerAddress=hypervisor.address,
-            tickUpper=hypervisor.baseUpper,
-            tickLower=hypervisor.baseLower,
+            tickUpper=baseUpper,
+            tickLower=baseLower,
             inDecimal=True,
         ),
-        hypervisor.pool.get_fees_uncollected(
+        pool.get_fees_uncollected(
             ownerAddress=hypervisor.address,
-            tickUpper=hypervisor.limitUpper,
-            tickLower=hypervisor.limitLower,
+            tickUpper=limitUpper,
+            tickLower=limitLower,
             inDecimal=True,
         ),
     )
@@ -88,9 +77,9 @@ async def hypervisor_uncollected_fees(
     )
 
     return {
-        "block": hypervisor.block,
-        "timestamp": hypervisor.timestamp,
-        "symbol": hypervisor.symbol,
+        "block": block,
+        "timestamp": timestamp,
+        "symbol": symbol,
         "baseFees0": float(base["qtty_token0"]),
         "baseFees1": float(base["qtty_token1"]),
         "baseTokensOwed0": float(base["qtty_token0_owed"]),
@@ -111,3 +100,50 @@ async def hypervisor_uncollected_fees(
         "totalFees1": totalFees1,
         # "totalFeesUSD": (float(base[0]) + float(limit[0])) * hypervisor.baseTokenPrice + (float(base[1]) + float(limit[1])) * hypervisor.quoteTokenPrice,
     }
+
+
+async def get_hypervisor_data(network: Chain, dex: Dex, hypervisor_address: str):
+    if hypervisor := build_hypervisor_anyRpc(
+        network=network, dex=dex, block=0, hypervisor_address=hypervisor_address
+    ):
+        block, timestamp = await hypervisor.init_block()
+        (
+            totalSupply,
+            totalAmounts,
+            hypervisor_decimals,
+            token0,
+            token1,
+        ) = await asyncio.gather(
+            hypervisor.totalSupply,
+            hypervisor.getTotalAmounts,
+            hypervisor.decimals,
+            hypervisor.token0,
+            hypervisor.token1,
+        )
+
+        (
+            token0_decimals,
+            token1_decimals,
+            token0_address,
+            token1_address,
+        ) = await asyncio.gather(
+            token0.decimals, token1.decimals, token0.address, token1.address
+        )
+
+        totalSupply = hypervisor.totalSupply / 10**hypervisor_decimals
+
+        totalAmounts["total0"] = totalAmounts["total0"] / 10**token0_decimals
+        totalAmounts["total1"] = totalAmounts["total1"] / 10**token1_decimals
+
+        return {
+            "block": block,
+            "timestamp": timestamp,
+            "address": hypervisor_address,
+            "token0_address": token0_address,
+            "token1_address": token1_address,
+            "token0_decimals": token0_decimals,
+            "token1_decimals": token1_decimals,
+            "decimals": hypervisor_decimals,
+            "totalSupply": totalSupply,
+            "totalAmounts": totalAmounts,
+        }

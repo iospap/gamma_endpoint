@@ -46,71 +46,15 @@ class web3wrap:
 
         self._timestamp = timestamp
         self._block = block
-        # control var
-        self._init = False
+        self._block_data = None
 
     # initializers
+    async def init_block(self) -> tuple[int, int]:
+        self._block_data = await self._w3.eth.get_block(self._block or "latest")
+        self.block = self._block_data.number
+        self.timestamp = self._block_data.timestamp
 
-    async def init(self, methods_list: list[str] | None = None):
-        """place queries to fill this class properties
-
-        Args:
-            methods_list ( list[str] | None, optional): T
-                This can be a list of the names of the properties to be filled.
-                 to handle sub-properties, use a tuple with the name of the property and the list of sub-property names.
-                . Defaults to all.
-        """
-        if not self._init:
-            # add defaults if no methlist is defined
-            if not methods_list:
-                methods_list = [self.init_all()]
-                # initialize supers
-                try:
-                    await super().init(methods_list=methods_list)
-                except AttributeError:
-                    # no super ?
-                    pass
-
-            #
-            to_call = []
-            for method in methods_list:
-                try:
-                    if isinstance(method, tuple):
-                        # if it is a tuple, it is a method with params
-                        meth, params = method
-                        if f := getattr(self, f"init_{meth}"):
-                            to_call.append(f(params))
-                    else:
-                        if f := getattr(
-                            self,
-                            f"init_{method}",
-                        ):
-                            to_call.append(f())
-                except AttributeError:
-                    # there is no attribute with that name
-                    pass
-
-            # call in parallel
-            await asyncio.gather(*to_call)
-
-        self._init = True
-
-    async def init_all(self):
-        # timestamp and block may be forced by parent
-        if self._timestamp == 0 or self._block == 0:
-            await self.init_block()
-
-    async def init_min(self):
-        await self.init_all()
-
-    async def init_block(self):
-        block_data = (
-            await self._w3.eth.get_block("latest")
-            if not self._block
-            else await self._w3.eth.get_block(self._block)
-        )
-        self._block = block_data.number
-        self._timestamp = block_data.timestamp
+        return self._block, self._timestamp
 
     def setup_abi(self, abi_filename: str, abi_path: str):
         # set optionals
@@ -128,7 +72,7 @@ class web3wrap:
         result = AsyncWeb3(
             AsyncHTTPProvider(
                 web3Url or CONFIGURATION["sources"]["web3Providers"][network],
-                request_kwargs={"timeout": 30},
+                request_kwargs={"timeout": 120},
             ),
             modules={"eth": AsyncEth, "net": AsyncNet},
         )
@@ -162,8 +106,11 @@ class web3wrap:
         return self._contract
 
     @property
-    def block(self) -> int:
+    async def block(self) -> int:
         """ """
+        if not self._block:
+            await self.init_block()
+
         return self._block
 
     @block.setter
@@ -171,8 +118,10 @@ class web3wrap:
         self._block = value
 
     @property
-    def timestamp(self) -> int:
+    async def timestamp(self) -> int:
         """ """
+        if not self._timestamp:
+            await self.init_block()
         return self._timestamp
 
     @timestamp.setter
@@ -481,11 +430,11 @@ class web3wrap:
 
     async def as_dict(self, convert_bint=False) -> dict:
         # it will only fill when block is not set
-        if not self._init:
-            await self.init()
 
-        result = {"block": self.block, "timestamp": self.timestamp}
-
+        result = {}
+        result["block"], result["timestamp"] = await asyncio.gather(
+            self.block, self.timestamp
+        )
         # lower case address to be able to be directly compared
         result["address"] = self.address.lower()
         return result
@@ -518,28 +467,19 @@ class erc20(web3wrap):
             custom_web3Url=custom_web3Url,
         )
 
-    # initializers
+        self.init_vars()
 
-    async def init_all(self):
-        """ini all the data for the object to be usable"""
-        to_call = [self.init_decimals(), self.init_symbol(), self.init_totalSupply()]
-
-        # call in parallel
-        await asyncio.gather(*to_call)
-
-    async def init_min(self):
-        """init the minimum amount of data for the object to be usable"""
-        to_call = [self.init_decimals(), self.init_symbol()]
-
-        # call in parallel
-        await asyncio.gather(*to_call)
+    def init_vars(self):
+        self._decimals = None
+        self._totalSupply = None
+        self._symbol = None
 
     async def init_decimals(self):
         self._decimals = await self._contract.functions.decimals().call()
 
     async def init_totalSupply(self):
         self._totalSupply = await self._contract.functions.totalSupply().call(
-            block_identifier=self.block
+            block_identifier=await self.block
         )
 
     async def init_symbol(self):
@@ -552,26 +492,32 @@ class erc20(web3wrap):
     # PROPERTIES
 
     @property
-    def decimals(self) -> int:
+    async def decimals(self) -> int:
+        if not self._decimals:
+            await self.init_decimals()
         return self._decimals
 
     @property
-    def totalSupply(self) -> int:
+    async def totalSupply(self) -> int:
+        if not self._totalSupply:
+            await self.init_totalSupply()
         return self._totalSupply
 
     @property
-    def symbol(self) -> str:
+    async def symbol(self) -> str:
+        if not self._symbol:
+            await self.init_symbol()
         return self._symbol
 
     async def balanceOf(self, address: str) -> int:
         return await self._contract.functions.balanceOf(
             Web3.to_checksum_address(address)
-        ).call(block_identifier=self.block)
+        ).call(block_identifier=await self.block)
 
     async def allowance(self, owner: str, spender: str) -> int:
         return await self._contract.functions.allowance(
             Web3.to_checksum_address(owner), Web3.to_checksum_address(spender)
-        ).call(block_identifier=self.block)
+        ).call(block_identifier=await self.block)
 
     async def as_dict(self, convert_bint=False) -> dict:
         """as_dict _summary_
@@ -584,11 +530,10 @@ class erc20(web3wrap):
         """
         result = await super().as_dict(convert_bint=convert_bint)
 
-        if not self._init:
-            await self.init()
-
-        result["decimals"] = self.decimals
-        result["totalSupply"] = self.totalSupply
-        result["symbol"] = self.symbol
+        (
+            result["decimals"],
+            result["totalSupply"],
+            result["symbol"],
+        ) = await asyncio.gather(self.decimals, self.totalSupply, self.symbol)
 
         return result

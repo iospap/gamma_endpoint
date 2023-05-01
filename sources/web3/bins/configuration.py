@@ -118,7 +118,7 @@ RPC_URLS = {
         "https://matic-mainnet.chainstacklabs.com",
         "https://rpc-mainnet.maticvigil.com",
         "https://rpc-mainnet.matic.quiknode.pro",
-        "https://matic-mainnet-full-rpc.bwarelabs.com",
+        # "https://matic-mainnet-full-rpc.bwarelabs.com",
         "https://polygon-bor.publicnode.com",
     ],
     "optimism": ["https://mainnet.optimism.io/"],
